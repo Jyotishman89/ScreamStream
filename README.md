@@ -10,6 +10,8 @@ natural-language questions with real films from the catalog.
 > Hosted free on **Vercel** (serverless) with a **Neon** PostgreSQL database —
 > effectively always-on, with no spin-down wait. Create an account to browse.
 
+![ScreamStream home page](docs/screenshot.png)
+
 ---
 
 ## Highlights
