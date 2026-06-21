@@ -11,5 +11,8 @@
   ],
   "routes": [
     { "src": "/(.*)", "dest": "app.py" }
+  ],
+  "crons": [
+    { "path": "/cron/enrich", "schedule": "0 4 * * *" }
   ]
 }

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ movie.title }} — Admin{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Edit movie</h1>
+    <span class="muted">{{ movie.id }}</span>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('admin') }}">‹ Back to admin</a>
+</section>
+
+<div class="admin-grid">
+  <form class="admin-form" method="post" action="{{ url_for('admin_edit', movie_id=movie.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <h2>Details</h2>
+
+    <label>Title *
+      <input type="text" name="title" value="{{ movie.title }}" required>
+    </label>
+
+    <div class="form-row">
+      <label>Genre
+        <input type="text" name="genre" value="{{ movie.genre }}">
+      </label>
+      <label>Year
+        <input type="number" name="year" min="1900" max="2100" value="{{ movie.year or '' }}">
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label>MPAA
+        <input type="text" name="mpaa" value="{{ movie.mpaa or '' }}">
+      </label>
+      <label>Runtime (min)
+        <input type="number" name="runtime" min="0" value="{{ movie.runtime or '' }}">
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label>IMDb (0–10)
+        <input type="number" name="imdb" step="0.1" min="0" max="10" value="{{ movie.imdb or '' }}">
+      </label>
+      <label>Rotten Tomatoes %
+        <input type="number" name="rotten" min="0" max="100" value="{{ movie.rotten or '' }}">
+      </label>
+    </div>
+
+    <label>Tagline
+      <input type="text" name="tagline" value="{{ movie.tagline or '' }}">
+    </label>
+
+    <label>Description
+      <textarea name="description" rows="3">{{ movie.description or '' }}</textarea>
+    </label>
+
+    <div class="form-row">
+      <label>Release date
+        <input type="text" name="release_date" placeholder="YYYY-MM-DD" value="{{ movie.release_date or '' }}">
+      </label>
+      <label>Status
+        <input type="text" name="status" value="{{ movie.status or '' }}">
+      </label>
+    </div>
+
+    <label>Director
+      <input type="text" name="director" value="{{ movie.director or '' }}">
+    </label>
+
+    <label>Keywords <span class="hint">(comma-separated)</span>
+      <input type="text" name="keywords" value="{{ movie.keywords or '' }}">
+    </label>
+
+    <label>Trailer (YouTube URL or ID)
+      <input type="text" name="trailer" value="{{ movie.trailer or '' }}">
+    </label>
+
+    <label>Poster URL
+      <input type="text" name="poster" value="{{ movie.poster or '' }}">
+    </label>
+
+    <label>Stream video URL <span class="hint">(direct .mp4 if it plays here)</span>
+      <input type="text" name="video" value="{{ movie.video or '' }}">
+    </label>
+
+    <label>Where to watch <span class="hint">(comma-separated)</span>
+      <input type="text" name="platforms" value="{{ movie.platforms or '' }}">
+      <span class="hint">Known: {{ platforms|join(', ') }}</span>
+    </label>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Save changes</button>
+      <a class="btn btn-ghost" href="{{ url_for('watch', movie_id=movie.id) }}">View page</a>
+    </div>
+  </form>
+
+  <div class="admin-list">
+    <h2>Preview</h2>
+    {% if movie.poster %}<img class="edit-poster" src="{{ movie.poster }}" alt="">{% endif %}
+    <p class="muted">Enrichment: {{ 'done' if movie.enriched else 'pending' }}{% if movie.tmdb_id %} · TMDB #{{ movie.tmdb_id }}{% endif %}</p>
+  </div>
+</div>
+{% endblock %}

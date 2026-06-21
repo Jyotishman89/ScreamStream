@@ -3,8 +3,11 @@
 
 {% block content %}
 <section class="page-head">
-  <h1>Admin · Manage Movies</h1>
-  <span class="muted">{{ movies|length }} title(s)</span>
+  <div>
+    <h1>Admin · Manage Movies</h1>
+    <span class="muted">{{ movies|length }} title(s)</span>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('admin_analytics') }}">📊 Analytics</a>
 </section>
 
 <section class="tmdb-panel">
@@ -166,7 +169,8 @@ python app.py</pre>
           <td>{{ m.year or '—' }}</td>
           <td>{{ '%.1f'|format(m.imdb) if m.imdb else '—' }}</td>
           <td>{{ '✅' if m.video else '—' }}</td>
-          <td>
+          <td class="row-actions">
+            <a class="btn-edit" href="{{ url_for('admin_edit', movie_id=m.id) }}">Edit</a>
             <form method="post" action="{{ url_for('admin_delete', movie_id=m.id) }}"
                   data-confirm="Delete {{ m.title }}?">
               <input type="hidden" name="_csrf" value="{{ csrf_token }}">

@@ -229,6 +229,8 @@ SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER)
 EMAIL_ENABLED = bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
+
 TMDB_API = "https://api.themoviedb.org/3"
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
 TMDB_IMG_PROFILE = "https://image.tmdb.org/t/p/w185"
@@ -2253,6 +2255,109 @@ def admin_delete(movie_id):
     db.commit()
     flash("Movie deleted.", "success")
     return redirect(url_for("admin"))
+
+@app.route("/admin/edit/<movie_id>", methods=["GET", "POST"])
+@admin_required
+def admin_edit(movie_id):
+    db = get_db()
+    movie = get_movie(movie_id)
+    if movie is None:
+        abort(404)
+    if request.method == "POST":
+        f = request.form
+        title = f.get("title", "").strip()
+        if not title:
+            flash("Title is required.", "error")
+            return redirect(url_for("admin_edit", movie_id=movie_id))
+
+        def num(name, cast):
+            raw = f.get(name, "").strip()
+            try:
+                return cast(raw) if raw else None
+            except ValueError:
+                return None
+
+        trailer = extract_yt_id(f.get("trailer", ""))
+        db.execute(
+            """UPDATE movies SET title = ?, genre = ?, year = ?, mpaa = ?,
+               imdb = ?, rotten = ?, runtime = ?, description = ?, poster = ?,
+               trailer = ?, video = ?, platforms = ?, release_date = ?,
+               status = ?, tagline = ?, director = ?, keywords = ?
+               WHERE id = ?""",
+            (title, f.get("genre", "").strip() or "Thriller", num("year", int),
+             f.get("mpaa", "").strip(), num("imdb", float), num("rotten", int),
+             num("runtime", int), f.get("description", "").strip(),
+             f.get("poster", "").strip(), trailer, f.get("video", "").strip(),
+             f.get("platforms", "").strip(),
+             f.get("release_date", "").strip() or None,
+             f.get("status", "").strip() or None,
+             f.get("tagline", "").strip() or None,
+             f.get("director", "").strip() or None,
+             f.get("keywords", "").strip() or None, movie_id))
+        db.commit()
+        flash(f"Updated “{title}”.", "success")
+        return redirect(url_for("admin"))
+    return render_template("admin_edit.html", movie=movie,
+                           platforms=list(PLATFORM_SEARCH.keys()))
+
+@app.route("/admin/analytics")
+@admin_required
+def admin_analytics():
+    db = get_db()
+
+    def scalar(query):
+        row = db.execute(query).fetchone()
+        return (row["n"] if row else 0) or 0
+
+    totals = {
+        "movies": scalar("SELECT COUNT(*) AS n FROM movies"),
+        "users": scalar("SELECT COUNT(*) AS n FROM users"),
+        "reviews": scalar("SELECT COUNT(*) AS n FROM reviews"),
+        "watchlist": scalar("SELECT COUNT(*) AS n FROM watchlist"),
+        "plays": scalar("SELECT COUNT(*) AS n FROM history"),
+    }
+    top_watched = db.execute(
+        """SELECT m.id, m.title, COUNT(*) AS n FROM history h
+           JOIN movies m ON m.id = h.movie_id
+           GROUP BY m.id, m.title ORDER BY n DESC LIMIT 10""").fetchall()
+    top_rated = db.execute(
+        """SELECT m.id, m.title, AVG(r.rating) AS avg, COUNT(*) AS n
+           FROM reviews r JOIN movies m ON m.id = r.movie_id
+           GROUP BY m.id, m.title ORDER BY avg DESC, n DESC LIMIT 10""").fetchall()
+    most_listed = db.execute(
+        """SELECT m.id, m.title, COUNT(*) AS n FROM watchlist w
+           JOIN movies m ON m.id = w.movie_id
+           GROUP BY m.id, m.title ORDER BY n DESC LIMIT 10""").fetchall()
+    by_genre = db.execute(
+        "SELECT genre, COUNT(*) AS n FROM movies "
+        "GROUP BY genre ORDER BY n DESC").fetchall()
+    genre_max = max([r["n"] for r in by_genre], default=1)
+    return render_template(
+        "admin_analytics.html", totals=totals, top_watched=top_watched,
+        top_rated=top_rated, most_listed=most_listed, by_genre=by_genre,
+        genre_max=genre_max)
+
+@app.route("/cron/enrich")
+def cron_enrich():
+    auth = request.headers.get("Authorization", "")
+    provided = auth[7:] if auth.startswith("Bearer ") else request.args.get("key", "")
+    if not CRON_SECRET or not secrets.compare_digest(provided, CRON_SECRET):
+        abort(403)
+    if not (TMDB_API_KEY or OMDB_API_KEY):
+        return {"status": "skipped", "reason": "no enrichment provider configured"}
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM movies WHERE enriched = 0 LIMIT 10").fetchall()
+    done = 0
+    for movie in rows:
+        try:
+            enrich_movie(movie)
+            done += 1
+        except Exception:
+            pass
+    remaining = db.execute(
+        "SELECT COUNT(*) AS n FROM movies WHERE enriched = 0").fetchone()["n"]
+    return {"status": "ok", "processed": done, "remaining": remaining}
 
 @app.errorhandler(400)
 @app.errorhandler(403)

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Analytics — Admin{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Admin · Analytics</h1>
+    <span class="muted">Catalog and engagement at a glance</span>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('admin') }}">‹ Back to admin</a>
+</section>
+
+<div class="account-stats analytics-stats">
+  <div class="stat-card"><span class="stat-num">{{ totals.movies }}</span><span class="stat-label">Movies</span></div>
+  <div class="stat-card"><span class="stat-num">{{ totals.users }}</span><span class="stat-label">Users</span></div>
+  <div class="stat-card"><span class="stat-num">{{ totals.plays }}</span><span class="stat-label">Plays</span></div>
+  <div class="stat-card"><span class="stat-num">{{ totals.reviews }}</span><span class="stat-label">Reviews</span></div>
+  <div class="stat-card"><span class="stat-num">{{ totals.watchlist }}</span><span class="stat-label">Saves</span></div>
+</div>
+
+<div class="analytics-grid">
+  <section class="account-card">
+    <h2>Most watched</h2>
+    {% if top_watched %}
+      <ol class="rank-list">
+        {% for r in top_watched %}
+          <li><a href="{{ url_for('watch', movie_id=r.id) }}">{{ r.title }}</a><span class="rank-n">{{ r.n }}</span></li>
+        {% endfor %}
+      </ol>
+    {% else %}<p class="muted">No plays yet.</p>{% endif %}
+  </section>
+
+  <section class="account-card">
+    <h2>Top rated</h2>
+    {% if top_rated %}
+      <ol class="rank-list">
+        {% for r in top_rated %}
+          <li><a href="{{ url_for('watch', movie_id=r.id) }}">{{ r.title }}</a><span class="rank-n">★ {{ '%.1f'|format(r.avg) }} ({{ r.n }})</span></li>
+        {% endfor %}
+      </ol>
+    {% else %}<p class="muted">No reviews yet.</p>{% endif %}
+  </section>
+
+  <section class="account-card">
+    <h2>Most saved</h2>
+    {% if most_listed %}
+      <ol class="rank-list">
+        {% for r in most_listed %}
+          <li><a href="{{ url_for('watch', movie_id=r.id) }}">{{ r.title }}</a><span class="rank-n">{{ r.n }}</span></li>
+        {% endfor %}
+      </ol>
+    {% else %}<p class="muted">No saves yet.</p>{% endif %}
+  </section>
+
+  <section class="account-card">
+    <h2>Catalog by genre</h2>
+    <div class="genre-bars">
+      {% for g in by_genre %}
+        <div class="genre-bar">
+          <span class="genre-name">{{ g.genre }}</span>
+          <span class="genre-track"><span class="genre-fill" style="width: {{ (g.n / genre_max * 100)|round(0, 'floor') }}%"></span></span>
+          <span class="genre-count">{{ g.n }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
