@@ -7,6 +7,7 @@
     <h1 class="auth-logo">SCREAM<span>STREAM</span></h1>
     <h2>Sign in</h2>
     <form method="post" action="{{ url_for('login') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <label>
         Username
         <input type="text" name="username" autocomplete="username" required autofocus>

@@ -6,7 +6,8 @@
   <h1>My History</h1>
   {% if movies %}
     <form method="post" action="{{ url_for('clear_history') }}"
-          onsubmit="return confirm('Clear your entire watch history?');">
+          data-confirm="Clear your entire watch history?">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <button class="btn btn-ghost" type="submit">Clear history</button>
     </form>
   {% endif %}

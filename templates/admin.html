@@ -41,6 +41,7 @@
               <span class="muted">{{ r.year or '—' }}</span>
               <p class="tmdb-overview">{{ r.overview }}{% if r.overview %}…{% endif %}</p>
               <form method="post" action="{{ url_for('admin_import') }}">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                 <input type="hidden" name="tmdb_id" value="{{ r.tmdb_id }}">
                 <button class="btn btn-primary" type="submit">+ Import</button>
               </form>
@@ -51,6 +52,7 @@
     {% endif %}
 
     <form class="bulk-form" method="post" action="{{ url_for('admin_bulk') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <h3>Bulk import a full catalog</h3>
       <p class="muted">Pull lots of titles at once. Trailers and “where to watch”
          are fetched automatically the first time each one is opened.</p>
@@ -87,6 +89,7 @@ python app.py</pre>
 <div class="admin-grid">
 
   <form class="admin-form" method="post" action="{{ url_for('admin_add') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <h2>Add a movie</h2>
 
     <label>Title *
@@ -165,7 +168,8 @@ python app.py</pre>
           <td>{{ '✅' if m.video else '—' }}</td>
           <td>
             <form method="post" action="{{ url_for('admin_delete', movie_id=m.id) }}"
-                  onsubmit="return confirm('Delete {{ m.title }}?');">
+                  data-confirm="Delete {{ m.title }}?">
+              <input type="hidden" name="_csrf" value="{{ csrf_token }}">
               <button class="btn-del" type="submit">Delete</button>
             </form>
           </td>

@@ -61,9 +61,9 @@ def main():
         if password != getpass.getpass("Confirm password: "):
             conn.close()
             sys.exit("Passwords did not match.")
-    if len(password) < 4:
+    if len(password) < 8:
         conn.close()
-        sys.exit("Password too short (use at least 4 characters).")
+        sys.exit("Password too short (use at least 8 characters).")
 
     cur.execute(
         f"UPDATE users SET password_hash = {ph} WHERE username = {ph}",

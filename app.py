@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import secrets
 import sqlite3
 import urllib.parse
 from datetime import date, datetime, timezone
@@ -45,6 +46,63 @@ _load_env_file()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+if USE_PG and app.secret_key == "dev-secret-change-me":
+    raise RuntimeError(
+        "SECRET_KEY must be set in production — it signs the session cookies."
+    )
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=USE_PG,
+    MAX_CONTENT_LENGTH=1 * 1024 * 1024,
+)
+
+CSP = (
+    "default-src 'self'; "
+    "img-src 'self' data: https:; "
+    "media-src 'self' https:; "
+    "frame-src https://www.youtube.com https://www.youtube-nocookie.com; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "font-src 'self'; "
+    "connect-src 'self'; "
+    "object-src 'none'; "
+    "base-uri 'self'; "
+    "form-action 'self'; "
+    "frame-ancestors 'none'"
+)
+
+
+@app.after_request
+def _security_headers(resp):
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["X-Frame-Options"] = "DENY"
+    resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    resp.headers["Content-Security-Policy"] = CSP
+    if USE_PG:
+        resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return resp
+
+
+@app.before_request
+def _csrf_protect():
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        sent = request.form.get("_csrf") or request.headers.get("X-CSRFToken", "")
+        good = session.get("_csrf", "")
+        if not good or not sent or not secrets.compare_digest(good, sent):
+            abort(400)
+
+
+@app.context_processor
+def _inject_csrf():
+    token = session.get("_csrf")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf"] = token
+    return {"csrf_token": token}
+
 GENRE_ORDER = ["Thriller", "Anime", "Horror"]
 
 PLATFORM_SEARCH = {
@@ -993,8 +1051,8 @@ def register():
 
         if not username or not password:
             flash("Username and password are required.", "error")
-        elif len(password) < 4:
-            flash("Password must be at least 4 characters.", "error")
+        elif len(password) < 8:
+            flash("Password must be at least 8 characters.", "error")
         elif password != confirm:
             flash("Passwords do not match.", "error")
         else:
@@ -1040,7 +1098,10 @@ def login():
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["is_admin"] = should_admin
-            return redirect(request.args.get("next") or url_for("index"))
+            nxt = request.args.get("next", "")
+            if nxt.startswith("/") and not nxt.startswith("//"):
+                return redirect(nxt)
+            return redirect(url_for("index"))
 
         flash("Invalid username or password.", "error")
 
