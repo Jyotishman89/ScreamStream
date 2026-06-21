@@ -10,19 +10,13 @@
 <a class="back-link" href="{{ url_for('index', genre=movie.genre) }}">‹ Back to {{ movie.genre }}</a>
 
 <div class="player-wrap">
-  {% if movie.video %}
-    <video class="player" controls autoplay preload="metadata"
-           {% if movie.poster %}poster="{{ movie.poster }}"{% endif %}>
-      <source src="{{ movie.video }}" type="video/mp4">
-      Your browser does not support HTML5 video.
-    </video>
-  {% elif embed %}
+  {% if embed %}
     <iframe class="player" src="{{ embed }}" title="{{ movie.title }} trailer"
             frameborder="0" allowfullscreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
   {% else %}
     <div class="player no-media">
-      <p>No video or trailer available yet.</p>
+      <p>No trailer available yet.</p>
     </div>
   {% endif %}
 </div>
@@ -60,7 +54,7 @@
       {% if movie.release_date %} — releases {{ movie.release_date }}{% endif %}.
       Watch the trailer below.
     </div>
-  {% elif not movie.video %}
+  {% elif embed %}
     <div class="not-here">
       <strong>Not streaming on ScreamStream.</strong>
       You're watching the trailer — pick a platform below to watch the full film.
