@@ -173,6 +173,7 @@ html[data-theme="light"] .account-danger h2 { color: #b0362e; }
 html[data-theme="light"] .link-btn { color: #b0473f; }
 html[data-theme="light"] .link-btn:hover { color: #8f322c; }
 html[data-theme="light"] .totp-uri { color: #5a7368; }
+html[data-theme="light"] .card:hover .card-title { color: var(--accent); }
 
 html { scroll-behavior: smooth; }
 
