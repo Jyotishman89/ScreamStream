@@ -1278,7 +1278,13 @@ def index():
     present = {m["genre"] for m in db.execute("SELECT DISTINCT genre FROM movies")}
     genre_list = genres_in_order(present)
 
-    if active != "All" or query:
+    sort = request.args.get("sort", "popular")
+    ymin = request.args.get("ymin", "").strip()
+    ymax = request.args.get("ymax", "").strip()
+    imin = request.args.get("imin", "").strip()
+    has_filters = bool(ymin or ymax or imin or (sort and sort != "popular"))
+
+    if active != "All" or query or has_filters:
         clauses, params = [], []
         if active != "All":
             clauses.append("genre = ?")
@@ -1287,7 +1293,33 @@ def index():
             clauses.append("(LOWER(title) LIKE ? OR LOWER(description) LIKE ?)")
             like = f"%{query.lower()}%"
             params += [like, like]
+
+        def _int(s):
+            try:
+                return int(s)
+            except (TypeError, ValueError):
+                return None
+
+        if _int(ymin) is not None:
+            clauses.append("year >= ?")
+            params.append(_int(ymin))
+        if _int(ymax) is not None:
+            clauses.append("year <= ?")
+            params.append(_int(ymax))
+        try:
+            imin_v = float(imin) if imin else None
+        except ValueError:
+            imin_v = None
+        if imin_v is not None:
+            clauses.append("imdb >= ?")
+            params.append(imin_v)
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+
+        order = {
+            "rating": "COALESCE(imdb, 0) DESC, imdb_votes DESC",
+            "year": "COALESCE(year, 0) DESC, imdb_votes DESC",
+            "title": "LOWER(title) ASC",
+        }.get(sort, "imdb_votes DESC, imdb DESC")
 
         total = db.execute(
             "SELECT COUNT(*) AS n FROM movies" + where, params).fetchone()["n"]
@@ -1299,13 +1331,14 @@ def index():
 
         movies = db.execute(
             "SELECT * FROM movies" + where
-            + " ORDER BY imdb_votes DESC, imdb DESC LIMIT ? OFFSET ?",
+            + f" ORDER BY {order} LIMIT ? OFFSET ?",
             params + [PAGE_SIZE, (page - 1) * PAGE_SIZE],
         ).fetchall()
 
         return render_template(
             "index.html", mode="grid", genres=genre_list, active=active,
             query=query, movies=movies, total=total, page=page, pages=pages,
+            sort=sort, ymin=ymin, ymax=ymax, imin=imin,
         )
     rows = []
     for g_ in genre_list:
@@ -1338,10 +1371,35 @@ def index():
         (date.today().isoformat(),),
     ).fetchall()
 
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    trending = db.execute(
+        """SELECT m.*, COUNT(*) AS hits FROM history h JOIN movies m ON m.id = h.movie_id
+           WHERE h.watched_at >= ? GROUP BY m.id
+           ORDER BY hits DESC, m.imdb_votes DESC LIMIT 20""",
+        (week_ago,),
+    ).fetchall()
+
+    because = None
+    top_genre = db.execute(
+        """SELECT m.genre AS g, COUNT(*) AS n FROM history h JOIN movies m ON m.id = h.movie_id
+           WHERE h.user_id = ? GROUP BY m.genre ORDER BY n DESC LIMIT 1""",
+        (session["user_id"],),
+    ).fetchone()
+    if top_genre:
+        recs = db.execute(
+            """SELECT * FROM movies WHERE genre = ?
+               AND id NOT IN (SELECT movie_id FROM history WHERE user_id = ?)
+               ORDER BY imdb_votes DESC, imdb DESC LIMIT 20""",
+            (top_genre["g"], session["user_id"]),
+        ).fetchall()
+        if recs:
+            because = {"genre": top_genre["g"], "items": recs}
+
     return render_template(
         "index.html", mode="rows", genres=genre_list, active=active,
         query=query, rows=rows, continue_watching=continue_watching,
-        my_list=my_list, coming_soon=coming_soon,
+        my_list=my_list, trending=trending, because=because,
+        coming_soon=coming_soon,
     )
 
 @app.route("/ask")
@@ -1424,6 +1482,38 @@ def watch(movie_id):
         yt_search="https://www.youtube.com/results?search_query="
                   + urllib.parse.quote(movie["title"] + " trailer"),
     )
+
+@app.route("/surprise")
+@login_required
+def surprise():
+    row = get_db().execute(
+        "SELECT id FROM movies ORDER BY RANDOM() LIMIT 1").fetchone()
+    if row:
+        return redirect(url_for("watch", movie_id=row["id"]))
+    flash("There are no movies to pick from yet.", "error")
+    return redirect(url_for("index"))
+
+@app.route("/tag/<tag>")
+@login_required
+def tag(tag):
+    like = f"%{tag.lower()}%"
+    movies = get_db().execute(
+        "SELECT * FROM movies WHERE LOWER(keywords) LIKE ? "
+        "ORDER BY imdb_votes DESC, imdb DESC LIMIT 60", (like,),
+    ).fetchall()
+    return render_template("results.html", heading=f'Tagged “{tag}”',
+                           subhead="keyword", movies=movies)
+
+@app.route("/person/<name>")
+@login_required
+def person(name):
+    like = f"%{name.lower()}%"
+    movies = get_db().execute(
+        'SELECT * FROM movies WHERE LOWER(director) LIKE ? OR LOWER("cast") LIKE ? '
+        "ORDER BY COALESCE(year, 0) DESC LIMIT 60", (like, like),
+    ).fetchall()
+    return render_template("results.html", heading=name,
+                           subhead="cast & crew", movies=movies)
 
 @app.route("/history")
 @login_required

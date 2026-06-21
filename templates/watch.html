@@ -64,7 +64,9 @@
   <p class="watch-desc">{{ movie.description }}</p>
 
   <div class="facts">
-    {% if movie.director %}<div><span>Director</span>{{ movie.director }}</div>{% endif %}
+    {% if movie.director %}<div><span>Director</span>
+      {% for d in movie.director.split(',') %}{% if d.strip() %}<a class="facts-link" href="{{ url_for('person', name=d.strip()) }}">{{ d.strip() }}</a>{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}
+    </div>{% endif %}
     {% if movie.release_date %}<div><span>Release</span>{{ movie.release_date }}</div>{% endif %}
     {% if movie.budget %}<div><span>Budget</span>${{ "{:,}".format(movie.budget) }}</div>{% endif %}
     {% if movie.revenue %}<div><span>Box office</span>${{ "{:,}".format(movie.revenue) }}</div>{% endif %}
@@ -73,7 +75,7 @@
   {% if movie.keywords %}
     <div class="keywords">
       {% for k in movie.keywords.split(',') %}
-        {% if k.strip() %}<span class="kw">{{ k.strip() }}</span>{% endif %}
+        {% if k.strip() %}<a class="kw" href="{{ url_for('tag', tag=k.strip()) }}">{{ k.strip() }}</a>{% endif %}
       {% endfor %}
     </div>
   {% endif %}
@@ -106,7 +108,7 @@
           {% if c.profile %}<img src="{{ c.profile }}" alt="{{ c.name }}" loading="lazy">
           {% else %}<span class="cast-noimg">{{ c.name[:1] }}</span>{% endif %}
         </div>
-        <span class="cast-name">{{ c.name }}</span>
+        <a class="cast-name" href="{{ url_for('person', name=c.name) }}">{{ c.name }}</a>
         {% if c.character %}<span class="cast-char">{{ c.character }}</span>{% endif %}
       </div>
     {% endfor %}

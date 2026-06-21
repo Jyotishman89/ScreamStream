@@ -11,6 +11,9 @@
       <input type="text" name="q" placeholder="Ask anything about movies…">
       <button class="btn btn-primary" type="submit">Ask</button>
     </form>
+    <p class="hero-extra">
+      <a class="surprise-link" href="{{ url_for('surprise') }}">🎲 Surprise me with a random pick →</a>
+    </p>
   </div>
 </section>
 
@@ -24,6 +27,29 @@
 </div>
 
 {% if mode == 'grid' %}
+  <form class="filters" method="get" action="{{ url_for('index') }}">
+    {% if active and active != 'All' %}<input type="hidden" name="genre" value="{{ active }}">{% endif %}
+    {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+    <label>Sort
+      <select name="sort">
+        <option value="popular" {{ 'selected' if sort == 'popular' }}>Most popular</option>
+        <option value="rating" {{ 'selected' if sort == 'rating' }}>Highest rated</option>
+        <option value="year" {{ 'selected' if sort == 'year' }}>Newest</option>
+        <option value="title" {{ 'selected' if sort == 'title' }}>A–Z</option>
+      </select>
+    </label>
+    <label>Year from
+      <input type="number" name="ymin" value="{{ ymin }}" min="1900" max="2100" placeholder="1900">
+    </label>
+    <label>to
+      <input type="number" name="ymax" value="{{ ymax }}" min="1900" max="2100" placeholder="2100">
+    </label>
+    <label>Min IMDb
+      <input type="number" name="imin" value="{{ imin }}" min="0" max="10" step="0.1" placeholder="0">
+    </label>
+    <button class="btn btn-primary" type="submit">Apply</button>
+    <a class="btn btn-ghost" href="{{ url_for('index', genre=active if active != 'All' else None, q=query or None) }}">Reset</a>
+  </form>
   <p class="result-note">
     {{ total }} title(s){% if query %} for “{{ query }}”{% elif active != 'All' %} in {{ active }}{% endif %}.
   </p>
@@ -54,6 +80,27 @@
       <h2 class="row-title">Continue Watching</h2>
       <div class="cards-scroll">
         {% for m in continue_watching %}{% include "_card.html" %}{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if trending %}
+    <section class="row">
+      <h2 class="row-title">🔥 Trending This Week</h2>
+      <div class="cards-scroll">
+        {% for m in trending %}{% include "_card.html" %}{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if because %}
+    <section class="row">
+      <div class="row-head">
+        <h2 class="row-title">Because you like {{ because.genre }}</h2>
+        <a class="see-all" href="{{ url_for('index', genre=because.genre) }}">See all →</a>
+      </div>
+      <div class="cards-scroll">
+        {% for m in because['items'] %}{% include "_card.html" %}{% endfor %}
       </div>
     </section>
   {% endif %}

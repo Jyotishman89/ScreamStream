@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }} — ScreamStream{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>{{ heading }}</h1>
+    {% if subhead %}<span class="muted">{{ subhead }}</span>{% endif %}
+  </div>
+  <span class="muted">{{ movies|length }} title(s)</span>
+</section>
+
+{% if movies %}
+  <div class="cards cards-page">
+    {% for m in movies %}{% include "_card.html" %}{% endfor %}
+  </div>
+{% else %}
+  <p class="empty">Nothing found here yet.
+     <a href="{{ url_for('index') }}">Back to browse →</a></p>
+{% endif %}
+{% endblock %}

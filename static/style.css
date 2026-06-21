@@ -321,6 +321,23 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .chip-active:hover { filter: brightness(1.08); }
 .result-note { padding: 12px 32px 0; color: var(--muted); }
 
+.hero-extra { margin-top: 14px; }
+.surprise-link { color: var(--gold); font-weight: 600; font-size: .95rem; transition: color .2s ease, transform .2s var(--ease); display: inline-block; }
+.surprise-link:hover { color: var(--accent-2); transform: translateX(3px); }
+
+.filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 8px 32px 0; }
+.filters label { display: flex; flex-direction: column; gap: 4px; font-size: .76rem; color: var(--muted); }
+.filters select, .filters input {
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .15);
+  color: var(--text); border-radius: 8px; padding: 7px 10px; font-size: .9rem;
+}
+.filters select:focus, .filters input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.filters input[type="number"] { width: 92px; }
+.filters .btn { width: auto; }
+.facts-link, .cast-name[href] { color: var(--accent-2); }
+.facts-link:hover, .cast-name[href]:hover { color: var(--accent); }
+@media (max-width: 640px) { .filters { padding-left: 16px; padding-right: 16px; } }
+
 .row { padding: 22px 32px; }
 .row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .row-title { font-size: 1.3rem; margin-bottom: 14px; position: relative; padding-left: 14px; }
