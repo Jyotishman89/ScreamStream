@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Account — ScreamStream{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Account</h1>
+    <span class="muted">{{ session.get('username') }}{% if session.get('is_admin') %} · admin{% endif %}</span>
+  </div>
+</section>
+
+<div class="account-grid">
+  <div class="account-stats">
+    <a class="stat-card" href="{{ url_for('watchlist') }}">
+      <span class="stat-num">{{ stats.watchlist }}</span>
+      <span class="stat-label">In My List</span>
+    </a>
+    <a class="stat-card" href="{{ url_for('history') }}">
+      <span class="stat-num">{{ stats.history }}</span>
+      <span class="stat-label">Watched</span>
+    </a>
+    <div class="stat-card">
+      <span class="stat-num">{{ stats.reviews }}</span>
+      <span class="stat-label">Reviews</span>
+    </div>
+  </div>
+
+  <section class="account-card">
+    <h2>Change password</h2>
+    <form method="post" action="{{ url_for('change_password') }}" class="account-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Current password
+        <input type="password" name="current" autocomplete="current-password" required>
+      </label>
+      <label>New password
+        <input type="password" name="password" autocomplete="new-password"
+               minlength="8" maxlength="128" required>
+      </label>
+      <label>Confirm new password
+        <input type="password" name="confirm" autocomplete="new-password"
+               minlength="8" maxlength="128" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Update password</button>
+    </form>
+  </section>
+
+  <section class="account-card">
+    <h2>Sessions &amp; data</h2>
+    <p class="muted">Sign out everywhere else if you used a shared or lost device.</p>
+    <form method="post" action="{{ url_for('logout_all') }}" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="btn btn-ghost" type="submit">Sign out other devices</button>
+    </form>
+    <p class="muted">Download everything we store about you as a JSON file.</p>
+    <a class="btn btn-ghost" href="{{ url_for('export_data') }}">Export my data</a>
+  </section>
+
+  {% if not session.get('is_admin') %}
+  <section class="account-card account-danger">
+    <h2>Delete account</h2>
+    <p class="muted">This permanently removes your account, watchlist, history
+      and reviews. This can't be undone.</p>
+    <form method="post" action="{{ url_for('delete_account') }}" class="account-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Confirm with your password
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn-danger" type="submit"
+              data-confirm="Permanently delete your account and all its data?">
+        Delete my account
+      </button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

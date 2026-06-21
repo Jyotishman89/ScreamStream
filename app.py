@@ -145,6 +145,24 @@ def _csrf_protect():
             return redirect(url_for("index"))
 
 
+@app.before_request
+def _enforce_session_epoch():
+    uid = session.get("user_id")
+    if not uid or request.endpoint == "static":
+        return
+    try:
+        row = get_db().execute(
+            "SELECT session_epoch FROM users WHERE id = ?", (uid,)).fetchone()
+    except Exception:
+        return
+    if row is None:
+        session.clear()
+        return
+    if session.get("epoch", 0) != _row_get(row, "session_epoch", 0):
+        session.clear()
+        flash("You were signed out everywhere. Please log in again.", "error")
+
+
 @app.context_processor
 def _inject_csrf():
     token = session.get("_csrf")
@@ -928,12 +946,22 @@ CREATE INDEX IF NOT EXISTS idx_movies_genre_votes ON movies(genre, imdb_votes);
 CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_time ON login_attempts(ip, attempted_at);
 """
 
+USER_EXTRA_COLUMNS = {
+    "session_epoch": "INTEGER NOT NULL DEFAULT 0",
+    "totp_secret": "TEXT",
+    "email": "TEXT",
+    "email_verified": "INTEGER NOT NULL DEFAULT 0",
+}
+
 def init_db():
     if USE_PG:
         raw = psycopg2.connect(DATABASE_URL)
         raw.autocommit = True
         with raw.cursor() as cur:
             cur.execute(PG_SCHEMA)
+            for name, decl in USER_EXTRA_COLUMNS.items():
+                cur.execute(
+                    f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {name} {decl}")
         raw.close()
         return
     db = sqlite3.connect(DATABASE)
@@ -1022,6 +1050,10 @@ def init_db():
     for name, decl in add.items():
         if name not in cols:
             db.execute(f"ALTER TABLE movies ADD COLUMN {name} {decl}")
+    ucols = {row[1] for row in db.execute("PRAGMA table_info(users)")}
+    for name, decl in USER_EXTRA_COLUMNS.items():
+        if name not in ucols:
+            db.execute(f"ALTER TABLE users ADD COLUMN {name} {decl}")
     db.execute("CREATE INDEX IF NOT EXISTS idx_movies_genre_votes "
                "ON movies(genre, imdb_votes)")
     db.execute("CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_time "
@@ -1157,6 +1189,13 @@ def _record_login(db, ip, username, success):
     )
     db.commit()
 
+def _row_get(row, key, default=None):
+    try:
+        val = row[key]
+    except (KeyError, IndexError):
+        return default
+    return default if val is None else val
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -1264,6 +1303,7 @@ def login():
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["is_admin"] = should_admin
+            session["epoch"] = _row_get(user, "session_epoch", 0)
             nxt = request.args.get("next", "")
             if nxt.startswith("/") and not nxt.startswith("//"):
                 return redirect(nxt)
@@ -1281,6 +1321,126 @@ def logout():
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("login"))
+
+@app.route("/account")
+@login_required
+def account():
+    db = get_db()
+    uid = session["user_id"]
+    stats = {
+        "watchlist": db.execute(
+            "SELECT COUNT(*) AS n FROM watchlist WHERE user_id = ?",
+            (uid,)).fetchone()["n"],
+        "history": db.execute(
+            "SELECT COUNT(*) AS n FROM history WHERE user_id = ?",
+            (uid,)).fetchone()["n"],
+        "reviews": db.execute(
+            "SELECT COUNT(*) AS n FROM reviews WHERE user_id = ?",
+            (uid,)).fetchone()["n"],
+    }
+    return render_template("account.html", stats=stats)
+
+@app.route("/account/password", methods=["POST"])
+@login_required
+def change_password():
+    db = get_db()
+    uid = session["user_id"]
+    current = request.form.get("current", "")
+    password = request.form.get("password", "")
+    confirm = request.form.get("confirm", "")
+    user = db.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+
+    if user is None or not check_password_hash(user["password_hash"], current):
+        flash("Your current password is incorrect.", "error")
+    elif len(password) < 8:
+        flash("New password is too short — please use at least 8 characters.",
+              "error")
+    elif len(password) > MAX_PASSWORD_LEN:
+        flash("New password is too long — please keep it under 128 characters.",
+              "error")
+    elif password != confirm:
+        flash("The two new passwords don't match — please retype them.", "error")
+    elif (weak := password_too_weak(password, user["username"])):
+        flash(weak, "error")
+    elif check_password_hash(user["password_hash"], password):
+        flash("Your new password must be different from the current one.", "error")
+    else:
+        new_epoch = _row_get(user, "session_epoch", 0) + 1
+        db.execute(
+            "UPDATE users SET password_hash = ?, session_epoch = ? WHERE id = ?",
+            (generate_password_hash(password), new_epoch, uid))
+        db.commit()
+        session["epoch"] = new_epoch
+        flash("Password changed. Other devices have been signed out.", "success")
+    return redirect(url_for("account"))
+
+@app.route("/account/logout-all", methods=["POST"])
+@login_required
+def logout_all():
+    db = get_db()
+    uid = session["user_id"]
+    row = db.execute("SELECT session_epoch FROM users WHERE id = ?",
+                     (uid,)).fetchone()
+    new_epoch = _row_get(row, "session_epoch", 0) + 1
+    db.execute("UPDATE users SET session_epoch = ? WHERE id = ?",
+               (new_epoch, uid))
+    db.commit()
+    session["epoch"] = new_epoch
+    flash("Signed out on all other devices.", "success")
+    return redirect(url_for("account"))
+
+@app.route("/account/export")
+@login_required
+def export_data():
+    db = get_db()
+    uid = session["user_id"]
+    user = db.execute("SELECT username, is_admin FROM users WHERE id = ?",
+                      (uid,)).fetchone()
+    history = db.execute(
+        "SELECT movie_id, watched_at FROM history WHERE user_id = ? "
+        "ORDER BY watched_at DESC", (uid,)).fetchall()
+    wl = db.execute(
+        "SELECT movie_id, added_at FROM watchlist WHERE user_id = ? "
+        "ORDER BY added_at DESC", (uid,)).fetchall()
+    rv = db.execute(
+        "SELECT movie_id, rating, body, created_at FROM reviews WHERE user_id = ? "
+        "ORDER BY created_at DESC", (uid,)).fetchall()
+    payload = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "account": {"username": user["username"],
+                    "is_admin": bool(user["is_admin"])},
+        "history": [dict(r) for r in history],
+        "watchlist": [dict(r) for r in wl],
+        "reviews": [dict(r) for r in rv],
+    }
+    body = json.dumps(payload, indent=2, ensure_ascii=False)
+    resp = Response(body, mimetype="application/json")
+    resp.headers["Content-Disposition"] = \
+        "attachment; filename=screamstream-data.json"
+    return resp
+
+@app.route("/account/delete", methods=["POST"])
+@login_required
+def delete_account():
+    db = get_db()
+    uid = session["user_id"]
+    password = request.form.get("password", "")
+    user = db.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+    if user is None or not check_password_hash(user["password_hash"], password):
+        flash("Password incorrect — your account was not deleted.", "error")
+        return redirect(url_for("account"))
+    if session.get("is_admin"):
+        flash("Admin accounts can't be deleted from here.", "error")
+        return redirect(url_for("account"))
+    db.execute("DELETE FROM history WHERE user_id = ?", (uid,))
+    db.execute("DELETE FROM watchlist WHERE user_id = ?", (uid,))
+    db.execute("DELETE FROM reviews WHERE user_id = ?", (uid,))
+    db.execute("DELETE FROM users WHERE id = ?", (uid,))
+    db.commit()
+    session.clear()
+    flash("Your account and all its data have been permanently deleted.",
+          "success")
+    return redirect(url_for("register"))
 
 ROW_LIMIT = 24     
 PAGE_SIZE = 60      

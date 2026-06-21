@@ -22,7 +22,7 @@
         <input type="text" name="q" placeholder="Search titles…"
                value="{{ query|default('') }}">
       </form>
-      <span class="user">{{ session.get('username') }}</span>
+      <a class="user" href="{{ url_for('account') }}">{{ session.get('username') }}</a>
       <form class="logout-form" action="{{ url_for('logout') }}" method="post">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <button class="btn btn-ghost" type="submit">Log out</button>

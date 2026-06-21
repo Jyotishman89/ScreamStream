@@ -667,3 +667,37 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .r-stars-off { color: rgba(255, 255, 255, .15); }
 .r-date { color: var(--muted); font-size: .78rem; margin-left: auto; }
 .review-body { margin: 8px 0 0; color: #c8d6cf; line-height: 1.55; white-space: pre-wrap; }
+
+.account-grid { display: grid; gap: 18px; max-width: 720px; padding: 0 32px 40px; }
+.account-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat-card {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 18px 12px; border-radius: 14px; text-decoration: none;
+  background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .07);
+  transition: border-color .2s ease, transform .15s var(--ease);
+}
+a.stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.stat-num { font-family: "Montserrat", sans-serif; font-size: 1.7rem; font-weight: 700; color: var(--gold); }
+.stat-label { color: var(--muted); font-size: .82rem; }
+
+.account-card {
+  background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 16px; padding: 22px 24px;
+}
+.account-card h2 { margin: 0 0 14px; font-size: 1.15rem; }
+.account-form { display: grid; gap: 12px; max-width: 380px; }
+.account-form label { display: grid; gap: 5px; font-size: .85rem; color: var(--muted); }
+.account-form input {
+  padding: 10px 12px; border-radius: 10px; color: var(--text); font: inherit;
+  background: rgba(0, 0, 0, .25); border: 1px solid rgba(255, 255, 255, .12);
+}
+.account-form input:focus { outline: none; border-color: var(--accent); }
+.account-form .btn { justify-self: start; }
+.inline-form { margin-bottom: 16px; }
+.account-danger { border-color: rgba(201, 122, 122, .35); }
+.account-danger h2 { color: #e89393; }
+.btn-danger {
+  background: transparent; border: 1px solid #c0564f; color: #e89393;
+  transition: background .2s ease, color .2s ease;
+}
+.btn-danger:hover { background: #c0564f; color: #fff; }
