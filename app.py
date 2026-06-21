@@ -1,4 +1,5 @@
 import json
+import mimetypes
 import os
 import re
 import secrets
@@ -17,6 +18,9 @@ from flask import (
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
+
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("font/woff", ".woff")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, "screamstream.db")
