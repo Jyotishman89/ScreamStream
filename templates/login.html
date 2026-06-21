@@ -10,11 +10,13 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <label>
         Username
-        <input type="text" name="username" autocomplete="username" required autofocus>
+        <input type="text" name="username" autocomplete="username" required autofocus
+               value="{{ username|default('') }}" maxlength="32">
       </label>
       <label>
         Password
-        <input type="password" name="password" autocomplete="current-password" required>
+        <input type="password" name="password" autocomplete="current-password" required
+               maxlength="128">
       </label>
       <button class="btn btn-primary" type="submit">Log in</button>
     </form>

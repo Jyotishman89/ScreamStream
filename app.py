@@ -108,7 +108,12 @@ def _csrf_protect():
         sent = request.form.get("_csrf") or request.headers.get("X-CSRFToken", "")
         good = session.get("_csrf", "")
         if not good or not sent or not secrets.compare_digest(good, sent):
-            abort(400)
+            flash("Your session timed out or the form couldn't be verified. "
+                  "Please try that again.", "error")
+            ref = request.referrer or ""
+            if ref.startswith(request.host_url):
+                return redirect(ref)
+            return redirect(url_for("index"))
 
 
 @app.context_processor
@@ -1107,16 +1112,23 @@ def register():
         confirm = request.form.get("confirm", "")
 
         if not username or not password:
-            flash("Username and password are required.", "error")
+            flash("Please fill in both a username and a password.", "error")
+        elif len(username) < 3 or len(username) > 32:
+            flash("Username must be between 3 and 32 characters long.", "error")
+        elif not re.search(r"[A-Za-z]", username):
+            flash("Username must include at least one letter — it can't be only "
+                  "numbers or symbols.", "error")
         elif not USERNAME_RE.match(username):
-            flash("Username must be 3–32 characters using letters, numbers, "
-                  ". _ or -.", "error")
+            flash("Username can only use letters, numbers and the symbols . _ - "
+                  "(no spaces, @, # and the like).", "error")
         elif len(password) < 8:
-            flash("Password must be at least 8 characters.", "error")
+            flash("Password is too short — please use at least 8 characters.",
+                  "error")
         elif len(password) > MAX_PASSWORD_LEN:
-            flash("Password is too long (max 128 characters).", "error")
+            flash("Password is too long — please keep it under 128 characters.",
+                  "error")
         elif password != confirm:
-            flash("Passwords do not match.", "error")
+            flash("The two passwords don't match — please retype them.", "error")
         else:
             db = get_db()
             is_admin = username == ADMIN_USERNAME
@@ -1129,7 +1141,8 @@ def register():
                 )
                 db.commit()
             except IntegrityError:
-                flash("That username is already taken.", "error")
+                flash("That username is already taken — please pick another.",
+                      "error")
             else:
                 if is_admin:
                     flash("Admin account created — please log in.", "success")
@@ -1137,7 +1150,8 @@ def register():
                     flash("Account created — please log in.", "success")
                 return redirect(url_for("login"))
 
-    return render_template("register.html")
+    return render_template("register.html",
+                           username=request.form.get("username", ""))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -1148,9 +1162,9 @@ def login():
         db = get_db()
         ip = _client_ip()
         if _login_locked(db, ip):
-            flash("Too many failed attempts. Wait a few minutes and try again.",
-                  "error")
-            return render_template("login.html"), 429
+            flash("Too many failed attempts from this device. Please wait a few "
+                  "minutes and try again.", "error")
+            return render_template("login.html", username=username), 429
 
         user = None
         if len(password) <= MAX_PASSWORD_LEN:
@@ -1182,9 +1196,11 @@ def login():
             return redirect(url_for("index"))
 
         _record_login(db, ip, username, False)
-        flash("Invalid username or password.", "error")
+        flash("We couldn't sign you in — the username or password is incorrect.",
+              "error")
 
-    return render_template("login.html")
+    return render_template("login.html",
+                           username=request.form.get("username", ""))
 
 @app.route("/logout", methods=["POST"])
 def logout():
@@ -1478,12 +1494,14 @@ def admin_delete(movie_id):
 def _handle_error(err):
     code = getattr(err, "code", 500)
     messages = {
-        400: "Bad request.",
-        403: "You don't have access to that.",
-        404: "That page or title doesn't exist.",
-        413: "That request is too large.",
-        429: "Too many requests — slow down and try again shortly.",
-        500: "Something went wrong on our end.",
+        400: "We couldn't process that request. Your session may have expired — "
+             "please go back and try again.",
+        403: "You don't have permission to open that page.",
+        404: "We couldn't find that page or title. The link may be old or mistyped.",
+        413: "That upload is too large — please choose a smaller file.",
+        429: "You're doing that a little too fast. Please wait a minute and try "
+             "again.",
+        500: "Something went wrong on our side. Please try again in a moment.",
     }
     return render_template("error.html", code=code,
                            message=messages.get(code, "Unexpected error.")), code
