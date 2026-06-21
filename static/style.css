@@ -136,6 +136,21 @@ html[data-theme="light"] .auth-card input {
 html[data-theme="light"] .auth-card input:focus { background: #fff; }
 html[data-theme="light"] .flash-error { background: #fdecec; color: #8a1f2b; border-color: #e6b3ba; }
 html[data-theme="light"] .flash-success { background: #e7f7ef; color: #0d6b46; border-color: #a7dcc4; }
+html[data-theme="light"] .watch-desc { color: #25342c; }
+html[data-theme="light"] .review-body { color: #2a3a32; }
+html[data-theme="light"] .facts div,
+html[data-theme="light"] .kw { border-color: rgba(20, 40, 30, .14); }
+html[data-theme="light"] .not-here {
+  background: #fbf3da; border-color: #e3cf94; color: #6b5512;
+}
+html[data-theme="light"] .coming {
+  background: #e4f1f8; border-color: #a9cfe0; color: #195a78;
+}
+html[data-theme="light"] .pill-status { color: #0b8a5f; }
+html[data-theme="light"] .r-rt { color: #d63b3b; }
+html[data-theme="light"] .r-users { color: #a9760a; border-bottom-color: rgba(169, 118, 10, .5); }
+html[data-theme="light"] .cast-photo { background: #dfe7e3; }
+html[data-theme="light"] .cast-noimg { color: #7c8f86; }
 
 html { scroll-behavior: smooth; }
 
