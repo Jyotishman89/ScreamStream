@@ -5,6 +5,7 @@ import sqlite3
 import sys
 import time
 import urllib.parse
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -50,6 +51,17 @@ def omdb_poster(imdb_tt, api_key):
         with urlopen(Request(url, headers={"User-Agent": "ScreamStream"}),
                      timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8", "replace"))
+    except HTTPError as exc:
+        if exc.code == 401:
+            reason = "Unauthorized"
+            try:
+                reason = json.loads(exc.read().decode("utf-8", "replace")).get("Error") or reason
+            except Exception:
+                pass
+            print(f"    ! OMDb rejected the key (401: {reason})")
+            return "", True
+        print(f"    ! fetch error: {exc}")
+        return "", False
     except Exception as exc:
         print(f"    ! fetch error: {exc}")
         return "", False
@@ -110,7 +122,9 @@ def main():
             checked += 1
             poster, limited = omdb_poster(imdb_tt, api_key)
             if limited:
-                print("  ! OMDb daily limit reached — stopping, resume tomorrow.")
+                print("  ! Stopped: OMDb returned 401 — either an invalid/inactive "
+                      "API key or the daily limit is reached. Fix the key in .env, "
+                      "or resume tomorrow if it's the limit.")
                 checked -= 1
                 break
             if poster:
