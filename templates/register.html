@@ -23,6 +23,10 @@
         <input type="password" name="password" autocomplete="new-password" required
                minlength="8" maxlength="128">
         <small class="hint">At least 8 characters.</small>
+        <span class="pw-meter" id="pw-meter">
+          <span class="pw-track"><span class="pw-bar" id="pw-bar"></span></span>
+          <small class="pw-note" id="pw-label"></small>
+        </span>
       </label>
       <label>
         Confirm password
@@ -36,4 +40,5 @@
     </p>
   </div>
 </div>
+<script src="{{ url_for('static', filename='pwcheck.js') }}" defer></script>
 {% endblock %}

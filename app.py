@@ -69,6 +69,31 @@ LOGIN_MAX_FAILURES = 10
 MAX_PASSWORD_LEN = 128
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,32}$")
 
+COMMON_PASSWORDS = {
+    "password", "12345678", "123456789", "1234567890", "qwerty", "qwertyuiop",
+    "password1", "password123", "11111111", "00000000", "letmein", "iloveyou",
+    "admin123", "welcome1", "abc12345", "qwerty123", "1q2w3e4r", "zaq12wsx",
+    "football", "baseball", "sunshine", "princess", "dragon123", "monkey12",
+    "superman", "trustno1", "passw0rd", "starwars", "whatever", "changeme",
+}
+
+def password_too_weak(password, username):
+    low = password.lower()
+    if low in COMMON_PASSWORDS:
+        return ("That password is one of the most common ones around — please "
+                "choose something less guessable.")
+    if username and low == username.lower():
+        return "Your password can't be the same as your username."
+    if len(set(password)) <= 2:
+        return ("That password is too simple (it repeats just a couple of "
+                "characters) — please mix it up.")
+    classes = sum(bool(re.search(p, password))
+                  for p in (r"[a-z]", r"[A-Z]", r"\d", r"[^A-Za-z0-9]"))
+    if len(password) < 12 and classes < 2:
+        return ("That password is a bit weak — make it longer, or add a mix of "
+                "letters, numbers and symbols.")
+    return None
+
 CSP = (
     "default-src 'self'; "
     "img-src 'self' data: https:; "
@@ -1129,6 +1154,8 @@ def register():
                   "error")
         elif password != confirm:
             flash("The two passwords don't match — please retype them.", "error")
+        elif (weak := password_too_weak(password, username)):
+            flash(weak, "error")
         else:
             db = get_db()
             is_admin = username == ADMIN_USERNAME

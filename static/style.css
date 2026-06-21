@@ -198,6 +198,16 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .auth-switch { margin-top: 18px; color: var(--muted); font-size: .9rem; }
 .auth-switch a { color: var(--accent-2); font-weight: 600; }
 
+.pw-meter { display: none; margin-top: 8px; }
+.pw-meter.show { display: block; }
+.pw-track { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.pw-bar { height: 100%; width: 0; border-radius: 999px; transition: width .25s var(--ease), background .25s ease; }
+.pw-bar.pw-weak   { width: 25%;  background: #e25c5c; }
+.pw-bar.pw-fair   { width: 50%;  background: var(--gold); }
+.pw-bar.pw-good   { width: 75%;  background: var(--accent-2); }
+.pw-bar.pw-strong { width: 100%; background: var(--accent); }
+.pw-note { display: block; margin-top: 5px; font-size: .75rem; color: var(--muted); }
+
 .hero {
   position: relative; overflow: hidden; padding: 64px 32px;
   background:
