@@ -1274,12 +1274,17 @@ def _send_email(to_addr, subject, body):
     msg["To"] = to_addr
     msg.set_content(body)
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
+            server.ehlo()
             server.starttls()
+            server.ehlo()
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
         return True
-    except Exception:
+    except Exception as exc:
+        app.logger.warning("Email send failed via %s:%s as %s -> %s: %s",
+                           SMTP_HOST, SMTP_PORT, SMTP_USER,
+                           type(exc).__name__, exc)
         return False
 
 def _send_verification(user_id, email, username):
