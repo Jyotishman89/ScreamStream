@@ -45,6 +45,32 @@
   </section>
 
   <section class="account-card">
+    <h2>Email address
+      {% if email and email_verified %}<span class="badge badge-on">Verified</span>
+      {% elif email %}<span class="badge badge-off">Unverified</span>{% endif %}
+    </h2>
+    <p class="muted">Used for password resets and account notices.</p>
+    <form method="post" action="{{ url_for('update_email') }}" class="account-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Email
+        <input type="email" name="email" value="{{ email }}"
+               maxlength="254" placeholder="you@example.com" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Save email</button>
+    </form>
+    {% if email and not email_verified and email_enabled %}
+      <form method="post" action="{{ url_for('resend_verification') }}" class="inline-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="link-btn" type="submit">Resend confirmation link</button>
+      </form>
+    {% endif %}
+    {% if not email_enabled %}
+      <p class="muted" style="margin-top:10px">Email delivery isn't configured on
+        this server, so verification and password-reset emails are disabled.</p>
+    {% endif %}
+  </section>
+
+  <section class="account-card">
     <h2>Two-factor authentication
       {% if two_factor_on %}<span class="badge badge-on">On</span>
       {% else %}<span class="badge badge-off">Off</span>{% endif %}

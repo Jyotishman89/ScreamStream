@@ -6,14 +6,18 @@ import mimetypes
 import os
 import re
 import secrets
+import smtplib
 import sqlite3
 import struct
 import time
 import urllib.parse
 from datetime import date, datetime, timedelta, timezone
+from email.message import EmailMessage
 from functools import wraps
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+
+from itsdangerous import BadData, URLSafeTimedSerializer
 
 from html import escape as html_escape
 
@@ -209,6 +213,14 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
+
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASS = os.environ.get("SMTP_PASSWORD", "")
+SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER)
+EMAIL_ENABLED = bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 TMDB_API = "https://api.themoviedb.org/3"
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
@@ -1232,6 +1244,45 @@ def totp_uri(secret_b32, username):
 def totp_pretty(secret_b32):
     return " ".join(secret_b32[i:i + 4] for i in range(0, len(secret_b32), 4))
 
+def _serializer(salt):
+    return URLSafeTimedSerializer(app.secret_key, salt=salt)
+
+def make_token(salt, payload):
+    return _serializer(salt).dumps(payload)
+
+def read_token(salt, token, max_age):
+    try:
+        return _serializer(salt).loads(token, max_age=max_age)
+    except BadData:
+        return None
+
+def _send_email(to_addr, subject, body):
+    if not EMAIL_ENABLED:
+        return False
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_addr
+    msg.set_content(body)
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+        return True
+    except Exception:
+        return False
+
+def _send_verification(user_id, email, username):
+    token = make_token("email-verify", {"uid": user_id, "email": email})
+    link = url_for("verify_email", token=token, _external=True)
+    return _send_email(
+        email, "Confirm your ScreamStream email",
+        f"Hi {username},\n\nConfirm this email address for your ScreamStream "
+        f"account by opening the link below:\n\n{link}\n\n"
+        "This link expires in 24 hours. If you didn't request it, you can "
+        "ignore this message.\n")
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -1384,6 +1435,70 @@ def login_2fa():
               "current 6-digit code.", "error")
     return render_template("login_2fa.html")
 
+@app.route("/forgot", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        ident = (request.form.get("identifier") or "").strip().lower()
+        if EMAIL_ENABLED and ident:
+            db = get_db()
+            user = db.execute(
+                "SELECT id, username, email, email_verified, password_hash "
+                "FROM users WHERE LOWER(username) = ? OR LOWER(email) = ?",
+                (ident, ident)).fetchone()
+            if (user and _row_get(user, "email")
+                    and _row_get(user, "email_verified")):
+                token = make_token("password-reset", {
+                    "uid": user["id"],
+                    "h": user["password_hash"][-16:]})
+                link = url_for("reset_password", token=token, _external=True)
+                _send_email(
+                    user["email"], "Reset your ScreamStream password",
+                    f"Hi {user['username']},\n\nWe received a request to reset "
+                    f"your password. Open the link below to choose a new one:\n\n"
+                    f"{link}\n\nThis link expires in 1 hour. If you didn't ask "
+                    "for this, you can safely ignore this email.\n")
+        flash("If an account matches that, we've sent a reset link to its "
+              "confirmed email address.", "success")
+        return redirect(url_for("login"))
+    return render_template("forgot.html", email_enabled=EMAIL_ENABLED)
+
+@app.route("/reset/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    data = read_token("password-reset", token, max_age=3600)
+    db = get_db()
+    user = None
+    if data and "uid" in data:
+        user = db.execute("SELECT * FROM users WHERE id = ?",
+                          (data["uid"],)).fetchone()
+    if (not user or _row_get(user, "password_hash", "")[-16:] != data.get("h")):
+        flash("That reset link is invalid or has expired. Please request a new "
+              "one.", "error")
+        return redirect(url_for("forgot_password"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
+        if len(password) < 8:
+            flash("Password is too short — please use at least 8 characters.",
+                  "error")
+        elif len(password) > MAX_PASSWORD_LEN:
+            flash("Password is too long — please keep it under 128 characters.",
+                  "error")
+        elif password != confirm:
+            flash("The two passwords don't match — please retype them.", "error")
+        elif (weak := password_too_weak(password, user["username"])):
+            flash(weak, "error")
+        else:
+            new_epoch = _row_get(user, "session_epoch", 0) + 1
+            db.execute(
+                "UPDATE users SET password_hash = ?, session_epoch = ? "
+                "WHERE id = ?",
+                (generate_password_hash(password), new_epoch, user["id"]))
+            db.commit()
+            flash("Your password has been reset. Please log in.", "success")
+            return redirect(url_for("login"))
+    return render_template("reset.html", token=token)
+
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
@@ -1406,10 +1521,15 @@ def account():
             "SELECT COUNT(*) AS n FROM reviews WHERE user_id = ?",
             (uid,)).fetchone()["n"],
     }
-    user = db.execute("SELECT totp_secret FROM users WHERE id = ?",
-                      (uid,)).fetchone()
-    return render_template("account.html", stats=stats,
-                           two_factor_on=bool(_row_get(user, "totp_secret")))
+    user = db.execute(
+        "SELECT totp_secret, email, email_verified FROM users WHERE id = ?",
+        (uid,)).fetchone()
+    return render_template(
+        "account.html", stats=stats,
+        two_factor_on=bool(_row_get(user, "totp_secret")),
+        email=_row_get(user, "email", ""),
+        email_verified=bool(_row_get(user, "email_verified")),
+        email_enabled=EMAIL_ENABLED)
 
 @app.route("/account/password", methods=["POST"])
 @login_required
@@ -1443,6 +1563,68 @@ def change_password():
         db.commit()
         session["epoch"] = new_epoch
         flash("Password changed. Other devices have been signed out.", "success")
+    return redirect(url_for("account"))
+
+@app.route("/account/email", methods=["POST"])
+@login_required
+def update_email():
+    db = get_db()
+    uid = session["user_id"]
+    email = (request.form.get("email") or "").strip().lower()[:254]
+    if not EMAIL_RE.match(email):
+        flash("Please enter a valid email address.", "error")
+        return redirect(url_for("account"))
+    db.execute("UPDATE users SET email = ?, email_verified = 0 WHERE id = ?",
+               (email, uid))
+    db.commit()
+    if EMAIL_ENABLED:
+        if _send_verification(uid, email, session["username"]):
+            flash("Saved. Check your inbox for a confirmation link.", "success")
+        else:
+            flash("Saved, but the confirmation email couldn't be sent right now. "
+                  "Try resending later.", "error")
+    else:
+        flash("Email saved. Verification is unavailable because email delivery "
+              "isn't configured on this server.", "success")
+    return redirect(url_for("account"))
+
+@app.route("/account/email/resend", methods=["POST"])
+@login_required
+def resend_verification():
+    db = get_db()
+    uid = session["user_id"]
+    user = db.execute("SELECT email, email_verified FROM users WHERE id = ?",
+                      (uid,)).fetchone()
+    email = _row_get(user, "email")
+    if not email:
+        flash("Add an email address first.", "error")
+    elif _row_get(user, "email_verified"):
+        flash("That email is already verified.", "success")
+    elif not EMAIL_ENABLED:
+        flash("Email delivery isn't configured on this server.", "error")
+    elif _send_verification(uid, email, session["username"]):
+        flash("Confirmation link sent — check your inbox.", "success")
+    else:
+        flash("Couldn't send the email right now. Please try again later.",
+              "error")
+    return redirect(url_for("account"))
+
+@app.route("/verify-email/<token>")
+@login_required
+def verify_email(token):
+    data = read_token("email-verify", token, max_age=86400)
+    if not data or "uid" not in data:
+        flash("That confirmation link is invalid or has expired.", "error")
+        return redirect(url_for("account"))
+    db = get_db()
+    user = db.execute("SELECT email FROM users WHERE id = ?",
+                      (data["uid"],)).fetchone()
+    if user is None or _row_get(user, "email") != data.get("email"):
+        flash("That confirmation link no longer matches your email.", "error")
+        return redirect(url_for("account"))
+    db.execute("UPDATE users SET email_verified = 1 WHERE id = ?", (data["uid"],))
+    db.commit()
+    flash("Your email address is confirmed.", "success")
     return redirect(url_for("account"))
 
 @app.route("/account/2fa/setup")

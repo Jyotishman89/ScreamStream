@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Reset password — ScreamStream{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1 class="auth-logo">SCREAM<span>STREAM</span></h1>
+    <h2>Forgot your password?</h2>
+    {% if email_enabled %}
+      <p class="auth-sub">Enter your username or email. If a confirmed email is on
+        file, we'll send a reset link.</p>
+      <form method="post" action="{{ url_for('forgot_password') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <label>
+          Username or email
+          <input type="text" name="identifier" autocomplete="username"
+                 autofocus required maxlength="254">
+        </label>
+        <button class="btn btn-primary" type="submit">Send reset link</button>
+      </form>
+    {% else %}
+      <p class="auth-sub">Password reset by email isn't available on this
+        deployment because email delivery isn't configured.</p>
+    {% endif %}
+    <p class="auth-switch">
+      Remembered it? <a href="{{ url_for('login') }}">Back to sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

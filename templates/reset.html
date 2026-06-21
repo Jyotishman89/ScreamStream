@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Choose a new password — ScreamStream{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1 class="auth-logo">SCREAM<span>STREAM</span></h1>
+    <h2>Choose a new password</h2>
+    <form method="post" action="{{ url_for('reset_password', token=token) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>
+        New password
+        <input type="password" name="password" autocomplete="new-password"
+               minlength="8" maxlength="128" autofocus required>
+      </label>
+      <label>
+        Confirm new password
+        <input type="password" name="confirm" autocomplete="new-password"
+               minlength="8" maxlength="128" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Reset password</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
