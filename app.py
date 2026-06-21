@@ -1439,9 +1439,32 @@ def admin_delete(movie_id):
     flash("Movie deleted.", "success")
     return redirect(url_for("admin"))
 
+# Create the schema + seed data on startup. On a "scale to zero" serverless host
+# (e.g. Vercel) the database can be briefly unreachable while it wakes and the
+# filesystem is read-only, so this must never crash module import: if it fails
+# here it is retried on the first request that comes in.
+_db_ready = False
+
+
+def _ensure_db_ready():
+    global _db_ready
+    if not _db_ready:
+        init_db()
+        seed_movies()
+        _db_ready = True
+
+
+@app.before_request
+def _bootstrap_db():
+    if not _db_ready:
+        _ensure_db_ready()
+
+
 with app.app_context():
-    init_db()
-    seed_movies()
+    try:
+        _ensure_db_ready()
+    except Exception:
+        pass  # retried lazily on the first request (see _bootstrap_db)
 
 
 if __name__ == "__main__":
