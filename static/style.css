@@ -151,6 +151,21 @@ html[data-theme="light"] .r-rt { color: #d63b3b; }
 html[data-theme="light"] .r-users { color: #a9760a; border-bottom-color: rgba(169, 118, 10, .5); }
 html[data-theme="light"] .cast-photo { background: #dfe7e3; }
 html[data-theme="light"] .cast-noimg { color: #7c8f86; }
+html[data-theme="light"] .tmdb-search input,
+html[data-theme="light"] .bulk-pages input,
+html[data-theme="light"] .admin-form input,
+html[data-theme="light"] .admin-form textarea {
+  background: #f4f7f5; border-color: rgba(20, 40, 30, .16); color: var(--text);
+}
+html[data-theme="light"] .tmdb-card { border-color: rgba(20, 40, 30, .12); }
+html[data-theme="light"] .tmdb-noposter { background: #dfe7e3; }
+html[data-theme="light"] .bulk-form { border-top-color: rgba(20, 40, 30, .12); }
+html[data-theme="light"] .admin-list th,
+html[data-theme="light"] .admin-list td { border-bottom-color: rgba(20, 40, 30, .1); }
+html[data-theme="light"] .admin-list tbody tr:hover { background: rgba(14, 159, 110, .08); }
+html[data-theme="light"] .setup-note { color: #25342c; }
+html[data-theme="light"] .btn-del { color: #0b6e4a; }
+html[data-theme="light"] .genre-track { background: rgba(20, 40, 30, .1); }
 
 html { scroll-behavior: smooth; }
 
