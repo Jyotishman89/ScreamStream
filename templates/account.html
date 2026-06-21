@@ -45,6 +45,28 @@
   </section>
 
   <section class="account-card">
+    <h2>Two-factor authentication
+      {% if two_factor_on %}<span class="badge badge-on">On</span>
+      {% else %}<span class="badge badge-off">Off</span>{% endif %}
+    </h2>
+    {% if two_factor_on %}
+      <p class="muted">An authenticator code is required every time you sign in.</p>
+      <form method="post" action="{{ url_for('two_factor_disable') }}" class="account-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <label>Confirm with your password
+          <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button class="btn btn-ghost" type="submit"
+                data-confirm="Turn off two-factor authentication?">Turn off 2FA</button>
+      </form>
+    {% else %}
+      <p class="muted">Add a second step at sign-in using any authenticator app
+        (Google Authenticator, Authy, 1Password and the like).</p>
+      <a class="btn btn-primary" href="{{ url_for('two_factor_setup') }}">Set up 2FA</a>
+    {% endif %}
+  </section>
+
+  <section class="account-card">
     <h2>Sessions &amp; data</h2>
     <p class="muted">Sign out everywhere else if you used a shared or lost device.</p>
     <form method="post" action="{{ url_for('logout_all') }}" class="inline-form">

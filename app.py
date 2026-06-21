@@ -1,9 +1,14 @@
+import base64
+import hashlib
+import hmac
 import json
 import mimetypes
 import os
 import re
 import secrets
 import sqlite3
+import struct
+import time
 import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 from functools import wraps
@@ -1196,6 +1201,37 @@ def _row_get(row, key, default=None):
         return default
     return default if val is None else val
 
+TOTP_ISSUER = "ScreamStream"
+
+def generate_totp_secret():
+    return base64.b32encode(secrets.token_bytes(20)).decode("ascii").rstrip("=")
+
+def _hotp(secret_b32, counter):
+    pad = "=" * (-len(secret_b32) % 8)
+    key = base64.b32decode(secret_b32.upper() + pad)
+    digest = hmac.new(key, struct.pack(">Q", counter), hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    value = struct.unpack(">I", digest[offset:offset + 4])[0] & 0x7FFFFFFF
+    return f"{value % 1000000:06d}"
+
+def verify_totp(secret_b32, code, window=1):
+    code = (code or "").strip().replace(" ", "")
+    if not secret_b32 or not re.fullmatch(r"\d{6}", code):
+        return False
+    counter = int(time.time() // 30)
+    for delta in range(-window, window + 1):
+        if hmac.compare_digest(_hotp(secret_b32, counter + delta), code):
+            return True
+    return False
+
+def totp_uri(secret_b32, username):
+    label = urllib.parse.quote(f"{TOTP_ISSUER}:{username}")
+    return (f"otpauth://totp/{label}?secret={secret_b32}"
+            f"&issuer={urllib.parse.quote(TOTP_ISSUER)}&period=30&digits=6")
+
+def totp_pretty(secret_b32):
+    return " ".join(secret_b32[i:i + 4] for i in range(0, len(secret_b32), 4))
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -1266,6 +1302,22 @@ def register():
     return render_template("register.html",
                            username=request.form.get("username", ""))
 
+def _complete_login(db, user, safe_next):
+    should_admin = user["username"] == ADMIN_USERNAME
+    if bool(user["is_admin"]) != should_admin:
+        db.execute("UPDATE users SET is_admin = ? WHERE id = ?",
+                   (1 if should_admin else 0, user["id"]))
+        db.commit()
+    session.clear()
+    session.permanent = True
+    session["user_id"] = user["id"]
+    session["username"] = user["username"]
+    session["is_admin"] = should_admin
+    session["epoch"] = _row_get(user, "session_epoch", 0)
+    if safe_next:
+        return redirect(safe_next)
+    return redirect(url_for("index"))
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -1292,22 +1344,15 @@ def login():
             valid = False
 
         if valid:
-            _record_login(db, ip, username, True)
-            should_admin = user["username"] == ADMIN_USERNAME
-            if bool(user["is_admin"]) != should_admin:
-                db.execute("UPDATE users SET is_admin = ? WHERE id = ?",
-                           (1 if should_admin else 0, user["id"]))
-                db.commit()
-            session.clear()
-            session.permanent = True
-            session["user_id"] = user["id"]
-            session["username"] = user["username"]
-            session["is_admin"] = should_admin
-            session["epoch"] = _row_get(user, "session_epoch", 0)
             nxt = request.args.get("next", "")
-            if nxt.startswith("/") and not nxt.startswith("//"):
-                return redirect(nxt)
-            return redirect(url_for("index"))
+            safe_next = nxt if nxt.startswith("/") and not nxt.startswith("//") else ""
+            if _row_get(user, "totp_secret"):
+                session.clear()
+                session["pending_2fa"] = user["id"]
+                session["pending_next"] = safe_next
+                return redirect(url_for("login_2fa"))
+            _record_login(db, ip, username, True)
+            return _complete_login(db, user, safe_next)
 
         _record_login(db, ip, username, False)
         flash("We couldn't sign you in — the username or password is incorrect.",
@@ -1315,6 +1360,29 @@ def login():
 
     return render_template("login.html",
                            username=request.form.get("username", ""))
+
+@app.route("/login/2fa", methods=["GET", "POST"])
+def login_2fa():
+    uid = session.get("pending_2fa")
+    if not uid:
+        return redirect(url_for("login"))
+    db = get_db()
+    ip = _client_ip()
+    if request.method == "POST":
+        if _login_locked(db, ip):
+            flash("Too many attempts from this device. Please wait a few "
+                  "minutes and try again.", "error")
+            return render_template("login_2fa.html"), 429
+        user = db.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+        code = request.form.get("code", "")
+        if user and verify_totp(_row_get(user, "totp_secret"), code):
+            safe_next = session.get("pending_next", "")
+            _record_login(db, ip, user["username"], True)
+            return _complete_login(db, user, safe_next)
+        _record_login(db, ip, _row_get(user, "username") if user else "", False)
+        flash("That code didn't match. Open your authenticator app and try the "
+              "current 6-digit code.", "error")
+    return render_template("login_2fa.html")
 
 @app.route("/logout", methods=["POST"])
 def logout():
@@ -1338,7 +1406,10 @@ def account():
             "SELECT COUNT(*) AS n FROM reviews WHERE user_id = ?",
             (uid,)).fetchone()["n"],
     }
-    return render_template("account.html", stats=stats)
+    user = db.execute("SELECT totp_secret FROM users WHERE id = ?",
+                      (uid,)).fetchone()
+    return render_template("account.html", stats=stats,
+                           two_factor_on=bool(_row_get(user, "totp_secret")))
 
 @app.route("/account/password", methods=["POST"])
 @login_required
@@ -1372,6 +1443,61 @@ def change_password():
         db.commit()
         session["epoch"] = new_epoch
         flash("Password changed. Other devices have been signed out.", "success")
+    return redirect(url_for("account"))
+
+@app.route("/account/2fa/setup")
+@login_required
+def two_factor_setup():
+    db = get_db()
+    user = db.execute("SELECT totp_secret FROM users WHERE id = ?",
+                      (session["user_id"],)).fetchone()
+    if _row_get(user, "totp_secret"):
+        flash("Two-factor authentication is already on.", "error")
+        return redirect(url_for("account"))
+    secret = session.get("pending_totp_secret")
+    if not secret:
+        secret = generate_totp_secret()
+        session["pending_totp_secret"] = secret
+    return render_template("two_factor_setup.html",
+                           secret=secret,
+                           secret_pretty=totp_pretty(secret),
+                           uri=totp_uri(secret, session["username"]))
+
+@app.route("/account/2fa/enable", methods=["POST"])
+@login_required
+def two_factor_enable():
+    db = get_db()
+    secret = session.get("pending_totp_secret")
+    if not secret:
+        flash("Start the setup again, please.", "error")
+        return redirect(url_for("two_factor_setup"))
+    if not verify_totp(secret, request.form.get("code", "")):
+        flash("That code didn't match — check your authenticator and try again.",
+              "error")
+        return redirect(url_for("two_factor_setup"))
+    db.execute("UPDATE users SET totp_secret = ? WHERE id = ?",
+               (secret, session["user_id"]))
+    db.commit()
+    session.pop("pending_totp_secret", None)
+    flash("Two-factor authentication is now on. You'll need your app at sign-in.",
+          "success")
+    return redirect(url_for("account"))
+
+@app.route("/account/2fa/disable", methods=["POST"])
+@login_required
+def two_factor_disable():
+    db = get_db()
+    user = db.execute("SELECT * FROM users WHERE id = ?",
+                      (session["user_id"],)).fetchone()
+    if user is None or not check_password_hash(user["password_hash"],
+                                               request.form.get("password", "")):
+        flash("Password incorrect — two-factor stays on.", "error")
+        return redirect(url_for("account"))
+    db.execute("UPDATE users SET totp_secret = NULL WHERE id = ?",
+               (session["user_id"],))
+    db.commit()
+    session.pop("pending_totp_secret", None)
+    flash("Two-factor authentication has been turned off.", "success")
     return redirect(url_for("account"))
 
 @app.route("/account/logout-all", methods=["POST"])

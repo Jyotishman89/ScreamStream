@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Verify it's you — ScreamStream{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1 class="auth-logo">SCREAM<span>STREAM</span></h1>
+    <h2>Two-step verification</h2>
+    <p class="auth-sub">Enter the 6-digit code from your authenticator app.</p>
+    <form method="post" action="{{ url_for('login_2fa') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>
+        Authentication code
+        <input type="text" name="code" inputmode="numeric" pattern="[0-9 ]*"
+               maxlength="7" autocomplete="one-time-code" autofocus required
+               placeholder="000000">
+      </label>
+      <button class="btn btn-primary" type="submit">Verify</button>
+    </form>
+    <p class="auth-switch">
+      <a href="{{ url_for('login') }}">Use a different account</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

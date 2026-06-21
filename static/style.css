@@ -701,3 +701,17 @@ a.stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
   transition: background .2s ease, color .2s ease;
 }
 .btn-danger:hover { background: #c0564f; color: #fff; }
+
+.badge { font-size: .68rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; vertical-align: middle; margin-left: 8px; letter-spacing: .04em; }
+.badge-on { background: rgba(16, 185, 129, .18); color: #5be3b5; border: 1px solid rgba(16, 185, 129, .4); }
+.badge-off { background: rgba(255, 255, 255, .06); color: var(--muted); border: 1px solid rgba(255, 255, 255, .14); }
+.auth-sub { color: var(--muted); font-size: .9rem; margin: -6px 0 14px; }
+.totp-key {
+  font-family: "Consolas", monospace; font-size: 1.25rem; letter-spacing: 2px;
+  background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 10px; padding: 12px 14px; word-break: break-all; color: var(--gold);
+}
+.totp-details { margin-top: 10px; }
+.totp-details summary { cursor: pointer; color: var(--muted); font-size: .85rem; }
+.totp-uri { font-family: "Consolas", monospace; font-size: .78rem; color: #9fb4ab; word-break: break-all; margin-top: 8px; }
+.form-actions { display: flex; gap: 10px; align-items: center; }

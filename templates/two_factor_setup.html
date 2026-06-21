@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Set up 2FA — ScreamStream{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Set up two-factor authentication</h1>
+    <span class="muted">Use any TOTP authenticator app</span>
+  </div>
+</section>
+
+<div class="account-grid">
+  <section class="account-card">
+    <h2>1. Add this key to your app</h2>
+    <p class="muted">In your authenticator app choose “Add account” → “Enter a setup
+      key” and paste the key below (account: {{ session.get('username') }}).</p>
+    <p class="totp-key">{{ secret_pretty }}</p>
+    <details class="totp-details">
+      <summary>Show setup link</summary>
+      <p class="totp-uri">{{ uri }}</p>
+    </details>
+  </section>
+
+  <section class="account-card">
+    <h2>2. Confirm a code</h2>
+    <p class="muted">Enter the current 6-digit code your app shows to finish.</p>
+    <form method="post" action="{{ url_for('two_factor_enable') }}" class="account-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label>Authentication code
+        <input type="text" name="code" inputmode="numeric" pattern="[0-9 ]*"
+               maxlength="7" autocomplete="one-time-code" autofocus required
+               placeholder="000000">
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Turn on 2FA</button>
+        <a class="btn btn-ghost" href="{{ url_for('account') }}">Cancel</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
