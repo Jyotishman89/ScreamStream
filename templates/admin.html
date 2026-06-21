@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Admin — ScreamStream{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>Admin · Manage Movies</h1>
+  <span class="muted">{{ movies|length }} title(s)</span>
+</section>
+
+<!-- Import from TMDB -->
+<section class="tmdb-panel">
+  <div class="tmdb-head">
+    <h2>Import from TMDB</h2>
+    {% if tmdb_enabled %}
+      <span class="muted">Ratings:
+        {{ 'IMDb + Rotten Tomatoes (OMDb)' if omdb_enabled else 'TMDB score (set OMDB_API_KEY for IMDb + RT)' }}
+        · Region: {{ region }}</span>
+    {% endif %}
+  </div>
+
+  {% if tmdb_enabled %}
+    <form class="tmdb-search" method="get" action="{{ url_for('admin') }}">
+      <input type="text" name="tmdb_q" value="{{ tmdb_q }}"
+             placeholder="Search a movie title to import…" autofocus>
+      <button class="btn btn-primary" type="submit">Search TMDB</button>
+    </form>
+
+    {% if tmdb_q and not results %}
+      <p class="muted">No TMDB results for “{{ tmdb_q }}”.</p>
+    {% endif %}
+
+    {% if results %}
+      <div class="tmdb-results">
+        {% for r in results %}
+          <div class="tmdb-card">
+            <div class="tmdb-poster">
+              {% if r.poster %}<img src="{{ r.poster }}" alt="" loading="lazy">
+              {% else %}<span class="tmdb-noposter">No image</span>{% endif %}
+            </div>
+            <div class="tmdb-body">
+              <strong>{{ r.title }}</strong>
+              <span class="muted">{{ r.year or '—' }}</span>
+              <p class="tmdb-overview">{{ r.overview }}{% if r.overview %}…{% endif %}</p>
+              <form method="post" action="{{ url_for('admin_import') }}">
+                <input type="hidden" name="tmdb_id" value="{{ r.tmdb_id }}">
+                <button class="btn btn-primary" type="submit">+ Import</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form class="bulk-form" method="post" action="{{ url_for('admin_bulk') }}">
+      <h3>Bulk import a full catalog</h3>
+      <p class="muted">Pull lots of titles at once. Trailers and “where to watch”
+         are fetched automatically the first time each one is opened.</p>
+      <div class="bulk-genres">
+        {% for g in bulk_genres %}
+          <label><input type="checkbox" name="genres" value="{{ g }}" checked> {{ g }}</label>
+        {% endfor %}
+      </div>
+      <label class="bulk-pages">Pages per genre <span class="hint">(20 titles each, max 20)</span>
+        <input type="number" name="pages" value="3" min="1" max="20">
+      </label>
+      <button class="btn btn-primary" type="submit">Import catalog</button>
+    </form>
+  {% else %}
+    <div class="setup-note">
+      <p><strong>TMDB import is off.</strong> Turn it on to auto-fetch posters,
+         trailers, overviews and live “where to watch” data — no manual typing.</p>
+      <ol>
+        <li>Get a free API key at
+            <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org</a>.</li>
+        <li>(Optional, for real IMDb + Rotten Tomatoes) get a key at
+            <a href="https://www.omdbapi.com/apikey.aspx" target="_blank" rel="noopener">omdbapi.com</a>.</li>
+        <li>Set them before launching, then restart:
+          <pre>$env:TMDB_API_KEY="your_key"
+$env:OMDB_API_KEY="your_key"   # optional
+python app.py</pre>
+        </li>
+      </ol>
+      <p class="muted">You can still add movies manually below.</p>
+    </div>
+  {% endif %}
+</section>
+
+<div class="admin-grid">
+  <!-- Add movie form -->
+  <form class="admin-form" method="post" action="{{ url_for('admin_add') }}">
+    <h2>Add a movie</h2>
+
+    <label>Title *
+      <input type="text" name="title" required>
+    </label>
+
+    <div class="form-row">
+      <label>Genre
+        <input type="text" name="genre" list="genre-list" value="Thriller">
+        <datalist id="genre-list">
+          <option value="Thriller"><option value="Anime"><option value="Horror">
+          <option value="Action"><option value="Drama"><option value="Sci-Fi">
+        </datalist>
+      </label>
+      <label>Year
+        <input type="number" name="year" min="1900" max="2100">
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label>MPAA
+        <input type="text" name="mpaa" placeholder="PG-13">
+      </label>
+      <label>Runtime (min)
+        <input type="number" name="runtime" min="0">
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label>IMDb (0–10)
+        <input type="number" name="imdb" step="0.1" min="0" max="10">
+      </label>
+      <label>Rotten Tomatoes %
+        <input type="number" name="rotten" min="0" max="100">
+      </label>
+    </div>
+
+    <label>Description
+      <textarea name="description" rows="3"></textarea>
+    </label>
+
+    <label>Trailer (YouTube URL or ID)
+      <input type="text" name="trailer" placeholder="https://youtu.be/...">
+    </label>
+
+    <label>Poster URL <span class="hint">(optional — defaults to the trailer thumbnail)</span>
+      <input type="text" name="poster" placeholder="https://...">
+    </label>
+
+    <label>Stream video URL <span class="hint">(optional — a direct .mp4 if it plays here)</span>
+      <input type="text" name="video" placeholder="https://.../movie.mp4">
+    </label>
+
+    <label>Where to watch <span class="hint">(comma-separated)</span>
+      <input type="text" name="platforms" placeholder="Netflix, Prime Video, MX Player">
+      <span class="hint">Known: {{ platforms|join(', ') }}</span>
+    </label>
+
+    <button class="btn btn-primary" type="submit">Add movie</button>
+  </form>
+
+  <!-- Existing movies -->
+  <div class="admin-list">
+    <h2>Current catalog</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>Title</th><th>Genre</th><th>Year</th><th>IMDb</th><th>On site</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for m in movies %}
+        <tr>
+          <td>{% if m.poster %}<img class="thumb" src="{{ m.poster }}" alt="">{% endif %}</td>
+          <td><a href="{{ url_for('watch', movie_id=m.id) }}">{{ m.title }}</a></td>
+          <td>{{ m.genre }}</td>
+          <td>{{ m.year or '—' }}</td>
+          <td>{{ '%.1f'|format(m.imdb) if m.imdb else '—' }}</td>
+          <td>{{ '✅' if m.video else '—' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete', movie_id=m.id) }}"
+                  onsubmit="return confirm('Delete {{ m.title }}?');">
+              <button class="btn-del" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

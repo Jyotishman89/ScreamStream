@@ -1,0 +1,13 @@
+{% if pages > 1 %}
+<nav class="pagination">
+  {% if page > 1 %}
+    <a class="btn btn-ghost"
+       href="{{ url_for('index', genre=(active if active != 'All' else none), q=(query or none), page=page-1) }}">‹ Prev</a>
+  {% endif %}
+  <span class="page-info">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}
+    <a class="btn btn-ghost"
+       href="{{ url_for('index', genre=(active if active != 'All' else none), q=(query or none), page=page+1) }}">Next ›</a>
+  {% endif %}
+</nav>
+{% endif %}

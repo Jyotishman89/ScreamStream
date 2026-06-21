@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{{ movie.title }} — ScreamStream{% endblock %}
+
+{% block content %}
+<a class="back-link" href="{{ url_for('index', genre=movie.genre) }}">‹ Back to {{ movie.genre }}</a>
+
+<div class="player-wrap">
+  {% if movie.video %}
+    <video class="player" controls autoplay preload="metadata"
+           {% if movie.poster %}poster="{{ movie.poster }}"{% endif %}>
+      <source src="{{ movie.video }}" type="video/mp4">
+      Your browser does not support HTML5 video.
+    </video>
+  {% elif embed %}
+    <iframe class="player" src="{{ embed }}" title="{{ movie.title }} trailer"
+            frameborder="0" allowfullscreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+  {% else %}
+    <div class="player no-media">
+      <p>No video or trailer available yet.</p>
+    </div>
+  {% endif %}
+</div>
+
+<div class="watch-info">
+  <h1>{{ movie.title }}</h1>
+  {% if movie.tagline %}<p class="tagline">“{{ movie.tagline }}”</p>{% endif %}
+
+  <p class="watch-meta">
+    <span class="tag">{{ movie.genre }}</span>
+    {% if movie.year %}<span>{{ movie.year }}</span>{% endif %}
+    {% if movie.mpaa %}<span class="pill">{{ movie.mpaa }}</span>{% endif %}
+    {% if movie.runtime %}<span>{{ movie.runtime }} min</span>{% endif %}
+    {% if movie.imdb %}<span class="r r-imdb">IMDb ★ {{ '%.1f'|format(movie.imdb) }}</span>{% endif %}
+    {% if movie.rotten %}<span class="r r-rt">🍅 {{ movie.rotten }}%</span>{% endif %}
+    {% if movie.status and movie.status != 'Released' %}
+      <span class="pill pill-status">{{ movie.status }}</span>
+    {% endif %}
+  </p>
+
+  {% if upcoming %}
+    <div class="coming">
+      <strong>🍿 Coming Soon</strong>
+      {% if movie.release_date %} — releases {{ movie.release_date }}{% endif %}.
+      Watch the trailer below.
+    </div>
+  {% elif not movie.video %}
+    <div class="not-here">
+      <strong>Not streaming on ScreamStream.</strong>
+      You're watching the trailer — pick a platform below to watch the full film.
+    </div>
+  {% endif %}
+
+  <p class="watch-desc">{{ movie.description }}</p>
+
+  <div class="facts">
+    {% if movie.director %}<div><span>Director</span>{{ movie.director }}</div>{% endif %}
+    {% if movie.release_date %}<div><span>Release</span>{{ movie.release_date }}</div>{% endif %}
+    {% if movie.budget %}<div><span>Budget</span>${{ "{:,}".format(movie.budget) }}</div>{% endif %}
+    {% if movie.revenue %}<div><span>Box office</span>${{ "{:,}".format(movie.revenue) }}</div>{% endif %}
+  </div>
+
+  {% if movie.keywords %}
+    <div class="keywords">
+      {% for k in movie.keywords.split(',') %}
+        {% if k.strip() %}<span class="kw">{{ k.strip() }}</span>{% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if not upcoming %}
+  <div class="where">
+    <h3>Where to watch</h3>
+    <div class="where-btns">
+      {% for l in links %}
+        <a class="btn btn-platform p-{{ l.name|lower|replace(' ', '')|replace('+','') }}"
+           href="{{ l.url }}" target="_blank" rel="noopener">{{ l.name }}</a>
+      {% endfor %}
+      <a class="btn btn-ghost" href="{{ yt_search }}" target="_blank" rel="noopener">
+        ▶ Trailer on YouTube
+      </a>
+    </div>
+    <p class="where-note">Links open a search on each service. Availability
+       varies by region — JustWatch shows the live, accurate list.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if cast %}
+<section class="row">
+  <h2 class="row-title">Cast</h2>
+  <div class="cast-scroll">
+    {% for c in cast %}
+      <div class="cast-card">
+        <div class="cast-photo">
+          {% if c.profile %}<img src="{{ c.profile }}" alt="{{ c.name }}" loading="lazy">
+          {% else %}<span class="cast-noimg">{{ c.name[:1] }}</span>{% endif %}
+        </div>
+        <span class="cast-name">{{ c.name }}</span>
+        {% if c.character %}<span class="cast-char">{{ c.character }}</span>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if related %}
+<section class="row">
+  <h2 class="row-title">More {{ movie.genre }}</h2>
+  <div class="cards">
+    {% for m in related %}{% include "_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}My History — ScreamStream{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>My History</h1>
+  {% if movies %}
+    <form method="post" action="{{ url_for('clear_history') }}"
+          onsubmit="return confirm('Clear your entire watch history?');">
+      <button class="btn btn-ghost" type="submit">Clear history</button>
+    </form>
+  {% endif %}
+</section>
+
+{% if movies %}
+  <div class="cards cards-page">
+    {% for m in movies %}{% include "_card.html" %}{% endfor %}
+  </div>
+{% else %}
+  <p class="empty">You haven't watched anything yet.
+     <a href="{{ url_for('index') }}">Browse the catalog →</a></p>
+{% endif %}
+{% endblock %}

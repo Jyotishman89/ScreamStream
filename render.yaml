@@ -1,0 +1,37 @@
+# Render Blueprint — deploys ScreamStream as a free web service.
+# In Render: New + -> Blueprint -> pick this repo. Then set the secret env vars
+# marked "sync: false" in the dashboard (they are never stored in the repo).
+# A free Postgres database backs the site so user data (sign-ups, watch history,
+# cached posters/trailers) survives restarts and redeploys.
+databases:
+  - name: screamstream-db
+    plan: free
+    databaseName: screamstream
+    user: screamstream
+
+services:
+  - type: web
+    name: screamstream
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 1 --threads 8 --timeout 60 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DATABASE_URL        # injected from the Postgres database above
+        fromDatabase:
+          name: screamstream-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: SECRET_KEY          # auto-generated strong session key
+        generateValue: true
+      - key: ADMIN_USERNAME      # set in the dashboard (kept out of git)
+        sync: false
+      - key: TMDB_REGION
+        value: IN
+      - key: OMDB_API_KEY        # set these in the dashboard (kept out of git)
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false

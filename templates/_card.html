@@ -1,0 +1,23 @@
+<a class="card" href="{{ url_for('watch', movie_id=m.id) }}">
+  <div class="poster poster-{{ m.genre|lower }}">
+    <img class="poster-img" loading="lazy" alt="{{ m.title }} thumbnail"
+         src="{{ m.poster if m.poster else url_for('poster', movie_id=m.id) }}">
+
+    <span class="poster-badge">{{ m.genre }}</span>
+    {% if m.video %}
+      <span class="poster-flag flag-stream">▶ Stream</span>
+    {% else %}
+      <span class="poster-flag flag-trailer">Trailer</span>
+    {% endif %}
+    <span class="poster-play">▶</span>
+    <div class="poster-grad"></div>
+  </div>
+  <div class="card-meta">
+    <span class="card-title">{{ m.title }}</span>
+    <span class="card-sub">{{ m.year }} · {{ m.mpaa or 'NR' }}</span>
+    <span class="card-ratings">
+      {% if m.imdb %}<span class="r r-imdb">★ {{ '%.1f'|format(m.imdb) }}</span>{% endif %}
+      {% if m.rotten %}<span class="r r-rt">🍅 {{ m.rotten }}%</span>{% endif %}
+    </span>
+  </div>
+</a>

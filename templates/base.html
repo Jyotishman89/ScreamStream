@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ScreamStream{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="{{ url_for('index') }}">SCREAM<span>STREAM</span></a>
+    {% if session.get('user_id') %}
+    <nav class="nav">
+      <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+      <a class="nav-link" href="{{ url_for('history') }}">My History</a>
+      {% if session.get('is_admin') %}
+        <a class="nav-link nav-admin" href="{{ url_for('admin') }}">Admin</a>
+      {% endif %}
+      <form class="search" action="{{ url_for('index') }}" method="get">
+        <input type="text" name="q" placeholder="Search titles…"
+               value="{{ query|default('') }}">
+      </form>
+      <span class="user">{{ session.get('username') }}</span>
+      <a class="btn btn-ghost" href="{{ url_for('logout') }}">Log out</a>
+    </nav>
+    {% endif %}
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <p>ScreamStream — demo project. On-site videos are Creative-Commons; other
+       titles show real trailers + links to the platforms that carry them.
+       Ratings/availability are reference data — verify before real use.</p>
+  </footer>
+</body>
+</html>

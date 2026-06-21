@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ query }} — ScreamStream AI{% endblock %}
+
+{% block content %}
+<section class="ask-head">
+  <form class="ask-form" method="get" action="{{ url_for('ask') }}">
+    <input type="text" name="q" value="{{ query }}"
+           placeholder="Ask anything about movies…" autofocus>
+    <button class="btn btn-primary" type="submit">Ask</button>
+  </form>
+  <p class="ask-q">“{{ query }}”</p>
+</section>
+
+{% if answer %}
+  <section class="ask-answer">
+    <span class="ask-badge">CONSENSUS</span>
+    <p>{{ answer }}</p>
+  </section>
+{% endif %}
+
+{% if results %}
+  <section class="row">
+    <h2 class="row-title">Top picks</h2>
+    <div class="cards cards-page">
+      {% for m in results %}{% include "_card.html" %}{% endfor %}
+    </div>
+  </section>
+{% else %}
+  <p class="empty">No movies matched. Try rephrasing your question.</p>
+{% endif %}
+{% endblock %}
