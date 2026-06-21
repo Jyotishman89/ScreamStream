@@ -134,6 +134,8 @@ html[data-theme="light"] .auth-card input {
   background: #f4f7f5; border-color: rgba(20, 40, 30, .16); color: var(--text);
 }
 html[data-theme="light"] .auth-card input:focus { background: #fff; }
+html[data-theme="light"] .flash-error { background: #fdecec; color: #8a1f2b; border-color: #e6b3ba; }
+html[data-theme="light"] .flash-success { background: #e7f7ef; color: #0d6b46; border-color: #a7dcc4; }
 
 html { scroll-behavior: smooth; }
 
