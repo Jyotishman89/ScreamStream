@@ -4,11 +4,7 @@
          src="{{ m.poster if m.poster else url_for('poster', movie_id=m.id) }}">
 
     <span class="poster-badge">{{ m.genre }}</span>
-    {% if m.video %}
-      <span class="poster-flag flag-stream">▶ Stream</span>
-    {% else %}
-      <span class="poster-flag flag-trailer">Trailer</span>
-    {% endif %}
+    <span class="poster-flag flag-trailer">Trailer</span>
     <span class="poster-play">▶</span>
     <div class="poster-grad"></div>
 
