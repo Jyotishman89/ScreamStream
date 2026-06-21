@@ -348,7 +348,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   transition: transform .28s var(--ease-out), box-shadow .28s var(--ease-out);
   will-change: transform;
 }
-.card:hover, .card:focus-visible {
+.card:hover, .card:focus-within {
   transform: translateY(-8px) scale(1.05); z-index: 5;
   box-shadow: var(--shadow-2), var(--glow);
 }
@@ -393,7 +393,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   border: 1px solid rgba(255, 255, 255, .08);
 }
 .poster-flag {
-  position: absolute; top: 10px; right: 10px; z-index: 4; font-size: .68rem;
+  position: absolute; bottom: 10px; right: 10px; z-index: 4; font-size: .68rem;
   font-weight: 700; padding: 3px 8px; border-radius: 6px;
 }
 .flag-stream { background: var(--grad); color: #04120c; }
@@ -405,6 +405,25 @@ textarea:focus-visible, [tabindex]:focus-visible {
   text-shadow: 0 2px 16px rgba(16, 185, 129, .85); pointer-events: none;
 }
 .card:hover .poster-play { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+.poster-link { position: absolute; inset: 0; z-index: 5; border-radius: 10px; }
+.card-meta-link { display: block; color: inherit; }
+.card-save {
+  position: absolute; top: 8px; right: 8px; z-index: 6; margin: 0;
+  opacity: 0; transform: translateY(-4px) scale(.92);
+  transition: opacity .2s ease, transform .2s var(--ease);
+}
+.card:hover .card-save, .card:focus-within .card-save,
+.card-save.card-save-active { opacity: 1; transform: none; }
+.save-btn {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border-radius: 999px; border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(6, 18, 14, .62); color: #fff; font-size: 1.05rem;
+  font-weight: 700; line-height: 1; cursor: pointer;
+  transition: transform .15s var(--ease), background .2s ease, color .2s ease, border-color .2s ease;
+}
+.save-btn:hover { transform: scale(1.12); border-color: var(--gold); }
+.save-btn.saved { background: var(--accent); color: #04120c; border-color: transparent; }
 
 .card-meta { padding: 8px 2px; }
 .card-title { display: block; font-weight: 600; font-size: .95rem; transition: color .2s ease; }
@@ -429,6 +448,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .watch-info { padding: 22px 32px; max-width: 960px; margin: 0 auto; }
 .watch-info h1 { font-size: 2rem; margin-bottom: 10px; }
 .watch-meta { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; color: var(--muted); margin-bottom: 14px; }
+.list-toggle { margin: 2px 0 18px; }
+.list-toggle .btn { width: auto; }
 .tag {
   background: var(--grad); color: #04120c; padding: 3px 10px; border-radius: 6px;
   font-size: .8rem; font-weight: 600; transition: transform .18s var(--ease), box-shadow .2s ease;
@@ -577,6 +598,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
-  .card:hover, .card:focus-visible { transform: none; }
+  .card:hover, .card:focus-within { transform: none; }
   .card:hover .poster-img { transform: none; }
 }

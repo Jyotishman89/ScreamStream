@@ -13,6 +13,7 @@
     {% if session.get('user_id') %}
     <nav class="nav">
       <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+      <a class="nav-link" href="{{ url_for('watchlist') }}">My List</a>
       <a class="nav-link" href="{{ url_for('history') }}">My History</a>
       {% if session.get('is_admin') %}
         <a class="nav-link nav-admin" href="{{ url_for('admin') }}">Admin</a>

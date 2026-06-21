@@ -37,6 +37,18 @@
   {% endif %}
 
 {% else %}
+  {% if my_list %}
+    <section class="row">
+      <div class="row-head">
+        <h2 class="row-title">My List</h2>
+        <a class="see-all" href="{{ url_for('watchlist') }}">See all →</a>
+      </div>
+      <div class="cards-scroll">
+        {% for m in my_list %}{% include "_card.html" %}{% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
   {% if continue_watching %}
     <section class="row">
       <h2 class="row-title">Continue Watching</h2>

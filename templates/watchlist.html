@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My List — ScreamStream{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>My List</h1>
+  {% if movies %}
+    <form method="post" action="{{ url_for('clear_watchlist') }}"
+          data-confirm="Remove everything from My List?">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="btn btn-ghost" type="submit">Clear list</button>
+    </form>
+  {% endif %}
+</section>
+
+{% if movies %}
+  <div class="cards cards-page">
+    {% for m in movies %}{% include "_card.html" %}{% endfor %}
+  </div>
+{% else %}
+  <p class="empty">Your list is empty.
+     <a href="{{ url_for('index') }}">Find something to save →</a></p>
+{% endif %}
+{% endblock %}

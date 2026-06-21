@@ -38,6 +38,16 @@
     {% endif %}
   </p>
 
+  <form class="list-toggle" method="post"
+        action="{{ url_for('watchlist_toggle', movie_id=movie.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ request.full_path }}">
+    <button class="btn {{ 'btn-ghost' if movie.id in watchlist_ids else 'btn-primary' }}"
+            type="submit">
+      {{ '✓ In My List' if movie.id in watchlist_ids else '+ Add to My List' }}
+    </button>
+  </form>
+
   {% if upcoming %}
     <div class="coming">
       <strong>🍿 Coming Soon</strong>

@@ -1,4 +1,4 @@
-<a class="card" href="{{ url_for('watch', movie_id=m.id) }}">
+<div class="card">
   <div class="poster poster-{{ m.genre|lower }}">
     <img class="poster-img" loading="lazy" alt="{{ m.title }} thumbnail"
          src="{{ m.poster if m.poster else url_for('poster', movie_id=m.id) }}">
@@ -11,13 +11,26 @@
     {% endif %}
     <span class="poster-play">▶</span>
     <div class="poster-grad"></div>
+
+    <a class="poster-link" href="{{ url_for('watch', movie_id=m.id) }}"
+       aria-label="Watch {{ m.title }}"></a>
+    <form class="card-save {{ 'card-save-active' if m.id in watchlist_ids }}"
+          method="post" action="{{ url_for('watchlist_toggle', movie_id=m.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+      <button class="save-btn {{ 'saved' if m.id in watchlist_ids }}" type="submit"
+              aria-label="{{ 'Remove from My List' if m.id in watchlist_ids else 'Add to My List' }}"
+              title="{{ 'In My List — click to remove' if m.id in watchlist_ids else 'Add to My List' }}">{{ '✓' if m.id in watchlist_ids else '+' }}</button>
+    </form>
   </div>
-  <div class="card-meta">
-    <span class="card-title">{{ m.title }}</span>
-    <span class="card-sub">{{ m.year }} · {{ m.mpaa or 'NR' }}</span>
-    <span class="card-ratings">
-      {% if m.imdb %}<span class="r r-imdb">★ {{ '%.1f'|format(m.imdb) }}</span>{% endif %}
-      {% if m.rotten %}<span class="r r-rt">🍅 {{ m.rotten }}%</span>{% endif %}
-    </span>
-  </div>
-</a>
+  <a class="card-meta-link" href="{{ url_for('watch', movie_id=m.id) }}">
+    <div class="card-meta">
+      <span class="card-title">{{ m.title }}</span>
+      <span class="card-sub">{{ m.year }} · {{ m.mpaa or 'NR' }}</span>
+      <span class="card-ratings">
+        {% if m.imdb %}<span class="r r-imdb">★ {{ '%.1f'|format(m.imdb) }}</span>{% endif %}
+        {% if m.rotten %}<span class="r r-rt">🍅 {{ m.rotten }}%</span>{% endif %}
+      </span>
+    </div>
+  </a>
+</div>

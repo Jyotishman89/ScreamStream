@@ -153,6 +153,19 @@ def _inject_csrf():
         session["_csrf"] = token
     return {"csrf_token": token}
 
+
+@app.context_processor
+def _inject_watchlist():
+    ids = set()
+    if session.get("user_id"):
+        try:
+            ids = {r["movie_id"] for r in get_db().execute(
+                "SELECT movie_id FROM watchlist WHERE user_id = ?",
+                (session["user_id"],)).fetchall()}
+        except Exception:
+            ids = set()
+    return {"watchlist_ids": ids}
+
 GENRE_ORDER = ["Thriller", "Anime", "Horror"]
 
 PLATFORM_SEARCH = {
@@ -890,6 +903,12 @@ CREATE TABLE IF NOT EXISTS history (
     watched_at TEXT NOT NULL,
     PRIMARY KEY (user_id, movie_id)
 );
+CREATE TABLE IF NOT EXISTS watchlist (
+    user_id  INTEGER NOT NULL,
+    movie_id TEXT NOT NULL,
+    added_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, movie_id)
+);
 CREATE TABLE IF NOT EXISTS login_attempts (
     id           SERIAL PRIMARY KEY,
     ip           TEXT NOT NULL,
@@ -949,6 +968,13 @@ def init_db():
             user_id    INTEGER NOT NULL,
             movie_id   TEXT NOT NULL,
             watched_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, movie_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS watchlist (
+            user_id  INTEGER NOT NULL,
+            movie_id TEXT NOT NULL,
+            added_at TEXT NOT NULL,
             PRIMARY KEY (user_id, movie_id)
         );
 
@@ -1300,6 +1326,12 @@ def index():
         (session["user_id"],),
     ).fetchall()
 
+    my_list = db.execute(
+        """SELECT m.* FROM watchlist w JOIN movies m ON m.id = w.movie_id
+           WHERE w.user_id = ? ORDER BY w.added_at DESC LIMIT 20""",
+        (session["user_id"],),
+    ).fetchall()
+
     coming_soon = db.execute(
         """SELECT * FROM movies WHERE release_date IS NOT NULL AND release_date > ?
            ORDER BY release_date ASC LIMIT 20""",
@@ -1309,7 +1341,7 @@ def index():
     return render_template(
         "index.html", mode="rows", genres=genre_list, active=active,
         query=query, rows=rows, continue_watching=continue_watching,
-        coming_soon=coming_soon,
+        my_list=my_list, coming_soon=coming_soon,
     )
 
 @app.route("/ask")
@@ -1412,6 +1444,53 @@ def clear_history():
     flash("Watch history cleared.", "success")
     return redirect(url_for("history"))
 
+@app.route("/watchlist")
+@login_required
+def watchlist():
+    rows = get_db().execute(
+        """SELECT m.*, w.added_at FROM watchlist w JOIN movies m ON m.id = w.movie_id
+           WHERE w.user_id = ? ORDER BY w.added_at DESC""",
+        (session["user_id"],),
+    ).fetchall()
+    return render_template("watchlist.html", movies=rows)
+
+@app.route("/watchlist/toggle/<movie_id>", methods=["POST"])
+@login_required
+def watchlist_toggle(movie_id):
+    db = get_db()
+    uid = session["user_id"]
+    already = db.execute(
+        "SELECT 1 FROM watchlist WHERE user_id = ? AND movie_id = ?",
+        (uid, movie_id),
+    ).fetchone()
+    if already:
+        db.execute("DELETE FROM watchlist WHERE user_id = ? AND movie_id = ?",
+                   (uid, movie_id))
+        db.commit()
+        flash("Removed from My List.", "success")
+    else:
+        if get_movie(movie_id) is None:
+            abort(404)
+        db.execute(
+            "INSERT INTO watchlist (user_id, movie_id, added_at) VALUES (?, ?, ?)",
+            (uid, movie_id, datetime.now(timezone.utc).isoformat()),
+        )
+        db.commit()
+        flash("Added to My List.", "success")
+    nxt = request.form.get("next", "")
+    if nxt.startswith("/") and not nxt.startswith("//"):
+        return redirect(nxt)
+    return redirect(url_for("watchlist"))
+
+@app.route("/watchlist/clear", methods=["POST"])
+@login_required
+def clear_watchlist():
+    db = get_db()
+    db.execute("DELETE FROM watchlist WHERE user_id = ?", (session["user_id"],))
+    db.commit()
+    flash("Your list has been cleared.", "success")
+    return redirect(url_for("watchlist"))
+
 @app.route("/admin")
 @admin_required
 def admin():
@@ -1512,6 +1591,7 @@ def admin_delete(movie_id):
     db = get_db()
     db.execute("DELETE FROM movies WHERE id = ?", (movie_id,))
     db.execute("DELETE FROM history WHERE movie_id = ?", (movie_id,))
+    db.execute("DELETE FROM watchlist WHERE movie_id = ?", (movie_id,))
     db.commit()
     flash("Movie deleted.", "success")
     return redirect(url_for("admin"))
