@@ -1,4 +1,4 @@
-# ScreamStream 🎬
+# ScreamStream 
 
 A movie exploring web app: sign up, browse a **144,000-title**
 catalog by genre, stream the free in-app titles, or jump to the trailer +
