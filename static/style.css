@@ -112,6 +112,15 @@ html[data-theme="light"] .stars label,
 html[data-theme="light"] .r-stars-off { color: rgba(20, 40, 30, .2); }
 html[data-theme="light"] .pw-track { background: rgba(20, 40, 30, .12); }
 html[data-theme="light"] .cards-scroll::-webkit-scrollbar-thumb { background: #b9c9c1; }
+html[data-theme="light"] .hero-inner h1 {
+  background: linear-gradient(100deg, #0c2a20 0%, #0e9f6e 58%, #a9760a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+html[data-theme="light"] .hero {
+  background:
+    linear-gradient(rgba(255, 255, 255, .2), var(--bg)),
+    radial-gradient(circle at 70% 25%, rgba(16, 185, 129, .14), transparent 60%);
+}
 
 html { scroll-behavior: smooth; }
 
