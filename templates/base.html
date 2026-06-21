@@ -22,7 +22,10 @@
                value="{{ query|default('') }}">
       </form>
       <span class="user">{{ session.get('username') }}</span>
-      <a class="btn btn-ghost" href="{{ url_for('logout') }}">Log out</a>
+      <form class="logout-form" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button class="btn btn-ghost" type="submit">Log out</button>
+      </form>
     </nav>
     {% endif %}
   </header>

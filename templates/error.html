@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — ScreamStream{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>{{ code }}</h1>
+</section>
+<p class="empty">{{ message }}
+   <a href="{{ url_for('index') }}">Back to home →</a></p>
+{% endblock %}

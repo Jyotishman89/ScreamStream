@@ -4,7 +4,7 @@ import re
 import secrets
 import sqlite3
 import urllib.parse
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -15,6 +15,7 @@ from flask import (
     Flask, Response, abort, flash, g, redirect, render_template, request,
     session, url_for
 )
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +46,8 @@ def _load_env_file():
 _load_env_file()
 
 app = Flask(__name__)
+if USE_PG:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 if USE_PG and app.secret_key == "dev-secret-change-me":
     raise RuntimeError(
@@ -52,11 +55,19 @@ if USE_PG and app.secret_key == "dev-secret-change-me":
     )
 
 app.config.update(
+    SESSION_COOKIE_NAME="ss_session",
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=USE_PG,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
     MAX_CONTENT_LENGTH=1 * 1024 * 1024,
 )
+
+DUMMY_PASSWORD_HASH = generate_password_hash("timing-equalizer-not-a-real-password")
+LOGIN_WINDOW = timedelta(minutes=15)
+LOGIN_MAX_FAILURES = 10
+MAX_PASSWORD_LEN = 128
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,32}$")
 
 CSP = (
     "default-src 'self'; "
@@ -80,7 +91,12 @@ def _security_headers(resp):
     resp.headers["X-Frame-Options"] = "DENY"
     resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    resp.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    resp.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    resp.headers["X-Permitted-Cross-Domain-Policies"] = "none"
     resp.headers["Content-Security-Policy"] = CSP
+    if session.get("user_id") and "Cache-Control" not in resp.headers:
+        resp.headers["Cache-Control"] = "no-store"
     if USE_PG:
         resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return resp
@@ -840,7 +856,15 @@ CREATE TABLE IF NOT EXISTS history (
     watched_at TEXT NOT NULL,
     PRIMARY KEY (user_id, movie_id)
 );
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id           SERIAL PRIMARY KEY,
+    ip           TEXT NOT NULL,
+    username     TEXT,
+    attempted_at TEXT NOT NULL,
+    success      INTEGER NOT NULL DEFAULT 0
+);
 CREATE INDEX IF NOT EXISTS idx_movies_genre_votes ON movies(genre, imdb_votes);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_time ON login_attempts(ip, attempted_at);
 """
 
 def init_db():
@@ -893,6 +917,14 @@ def init_db():
             watched_at TEXT NOT NULL,
             PRIMARY KEY (user_id, movie_id)
         );
+
+        CREATE TABLE IF NOT EXISTS login_attempts (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip           TEXT NOT NULL,
+            username     TEXT,
+            attempted_at TEXT NOT NULL,
+            success      INTEGER NOT NULL DEFAULT 0
+        );
         """
     )
     cols = {row[1] for row in db.execute("PRAGMA table_info(movies)")}
@@ -915,6 +947,8 @@ def init_db():
             db.execute(f"ALTER TABLE movies ADD COLUMN {name} {decl}")
     db.execute("CREATE INDEX IF NOT EXISTS idx_movies_genre_votes "
                "ON movies(genre, imdb_votes)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_login_attempts_ip_time "
+               "ON login_attempts(ip, attempted_at)")
     db.commit()
     db.close()
 
@@ -1023,6 +1057,29 @@ def genres_in_order(present):
     ordered += sorted(g_ for g_ in present if g_ not in GENRE_ORDER)
     return ordered
 
+def _client_ip():
+    return (request.remote_addr or "unknown")[:64]
+
+def _login_locked(db, ip):
+    cutoff = (datetime.now(timezone.utc) - LOGIN_WINDOW).isoformat()
+    db.execute("DELETE FROM login_attempts WHERE attempted_at < ?", (cutoff,))
+    db.commit()
+    n = db.execute(
+        "SELECT COUNT(*) AS n FROM login_attempts "
+        "WHERE ip = ? AND success = 0 AND attempted_at >= ?",
+        (ip, cutoff),
+    ).fetchone()["n"]
+    return n >= LOGIN_MAX_FAILURES
+
+def _record_login(db, ip, username, success):
+    db.execute(
+        "INSERT INTO login_attempts (ip, username, attempted_at, success) "
+        "VALUES (?, ?, ?, ?)",
+        (ip, (username or "")[:150], datetime.now(timezone.utc).isoformat(),
+         1 if success else 0),
+    )
+    db.commit()
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -1051,8 +1108,13 @@ def register():
 
         if not username or not password:
             flash("Username and password are required.", "error")
+        elif not USERNAME_RE.match(username):
+            flash("Username must be 3–32 characters using letters, numbers, "
+                  ". _ or -.", "error")
         elif len(password) < 8:
             flash("Password must be at least 8 characters.", "error")
+        elif len(password) > MAX_PASSWORD_LEN:
+            flash("Password is too long (max 128 characters).", "error")
         elif password != confirm:
             flash("Passwords do not match.", "error")
         else:
@@ -1084,17 +1146,33 @@ def login():
         password = request.form.get("password", "")
 
         db = get_db()
-        user = db.execute(
-            "SELECT * FROM users WHERE username = ?", (username,)
-        ).fetchone()
+        ip = _client_ip()
+        if _login_locked(db, ip):
+            flash("Too many failed attempts. Wait a few minutes and try again.",
+                  "error")
+            return render_template("login.html"), 429
 
-        if user and check_password_hash(user["password_hash"], password):
+        user = None
+        if len(password) <= MAX_PASSWORD_LEN:
+            user = db.execute(
+                "SELECT * FROM users WHERE username = ?", (username,)
+            ).fetchone()
+
+        if user:
+            valid = check_password_hash(user["password_hash"], password)
+        else:
+            check_password_hash(DUMMY_PASSWORD_HASH, password)
+            valid = False
+
+        if valid:
+            _record_login(db, ip, username, True)
             should_admin = user["username"] == ADMIN_USERNAME
             if bool(user["is_admin"]) != should_admin:
                 db.execute("UPDATE users SET is_admin = ? WHERE id = ?",
                            (1 if should_admin else 0, user["id"]))
                 db.commit()
             session.clear()
+            session.permanent = True
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["is_admin"] = should_admin
@@ -1103,11 +1181,12 @@ def login():
                 return redirect(nxt)
             return redirect(url_for("index"))
 
+        _record_login(db, ip, username, False)
         flash("Invalid username or password.", "error")
 
     return render_template("login.html")
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
     flash("You have been logged out.", "success")
@@ -1389,6 +1468,25 @@ def admin_delete(movie_id):
     db.commit()
     flash("Movie deleted.", "success")
     return redirect(url_for("admin"))
+
+@app.errorhandler(400)
+@app.errorhandler(403)
+@app.errorhandler(404)
+@app.errorhandler(413)
+@app.errorhandler(429)
+@app.errorhandler(500)
+def _handle_error(err):
+    code = getattr(err, "code", 500)
+    messages = {
+        400: "Bad request.",
+        403: "You don't have access to that.",
+        404: "That page or title doesn't exist.",
+        413: "That request is too large.",
+        429: "Too many requests — slow down and try again shortly.",
+        500: "Something went wrong on our end.",
+    }
+    return render_template("error.html", code=code,
+                           message=messages.get(code, "Unexpected error.")), code
 
 _db_ready = False
 
