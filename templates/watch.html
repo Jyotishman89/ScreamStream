@@ -33,6 +33,7 @@
     {% if movie.runtime %}<span>{{ movie.runtime }} min</span>{% endif %}
     {% if movie.imdb %}<span class="r r-imdb">IMDb ★ {{ '%.1f'|format(movie.imdb) }}</span>{% endif %}
     {% if movie.rotten %}<span class="r r-rt">🍅 {{ movie.rotten }}%</span>{% endif %}
+    {% if review_count %}<a class="r r-users" href="#reviews">Users ★ {{ '%.1f'|format(review_avg) }} ({{ review_count }})</a>{% endif %}
     {% if movie.status and movie.status != 'Released' %}
       <span class="pill pill-status">{{ movie.status }}</span>
     {% endif %}
@@ -97,6 +98,57 @@
   </div>
   {% endif %}
 </div>
+
+<section class="row" id="reviews">
+  <h2 class="row-title">Reviews
+    {% if review_count %}<span class="review-summary">★ {{ '%.1f'|format(review_avg) }} · {{ review_count }} rating{{ 's' if review_count != 1 }}</span>{% endif %}
+  </h2>
+
+  <form class="review-form" method="post" action="{{ url_for('review', movie_id=movie.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <p class="review-form-label">{{ 'Update your rating' if my_review else 'Rate this title' }}</p>
+    <div class="stars">
+      {% for n in [5, 4, 3, 2, 1] %}
+        <input type="radio" id="star{{ n }}" name="rating" value="{{ n }}"
+               {{ 'checked' if my_review and my_review.rating == n }}>
+        <label for="star{{ n }}" title="{{ n }} star{{ 's' if n != 1 }}">★</label>
+      {% endfor %}
+    </div>
+    <textarea name="body" rows="3" maxlength="2000"
+              placeholder="Share what you thought (optional)…">{{ my_review.body if my_review else '' }}</textarea>
+    <div class="review-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Save changes' if my_review else 'Post review' }}</button>
+    </div>
+  </form>
+
+  {% if my_review %}
+    <form class="review-delete" method="post"
+          action="{{ url_for('review_delete', movie_id=movie.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="link-btn" type="submit"
+              data-confirm="Remove your review?">Delete my review</button>
+    </form>
+  {% endif %}
+
+  {% if reviews %}
+    <ul class="review-list">
+      {% for rv in reviews %}
+        <li class="review-item">
+          <div class="review-head">
+            <span class="r-user">{{ rv.username }}</span>
+            <span class="r-stars" aria-label="{{ rv.rating }} out of 5">
+              {{ '★' * rv.rating }}<span class="r-stars-off">{{ '★' * (5 - rv.rating) }}</span>
+            </span>
+            <span class="r-date">{{ rv.created_at[:10] }}</span>
+          </div>
+          {% if rv.body %}<p class="review-body">{{ rv.body }}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No reviews yet — be the first.</p>
+  {% endif %}
+</section>
 
 {% if cast %}
 <section class="row">

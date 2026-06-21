@@ -909,6 +909,14 @@ CREATE TABLE IF NOT EXISTS watchlist (
     added_at TEXT NOT NULL,
     PRIMARY KEY (user_id, movie_id)
 );
+CREATE TABLE IF NOT EXISTS reviews (
+    user_id    INTEGER NOT NULL,
+    movie_id   TEXT NOT NULL,
+    rating     INTEGER NOT NULL,
+    body       TEXT,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, movie_id)
+);
 CREATE TABLE IF NOT EXISTS login_attempts (
     id           SERIAL PRIMARY KEY,
     ip           TEXT NOT NULL,
@@ -975,6 +983,15 @@ def init_db():
             user_id  INTEGER NOT NULL,
             movie_id TEXT NOT NULL,
             added_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, movie_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS reviews (
+            user_id    INTEGER NOT NULL,
+            movie_id   TEXT NOT NULL,
+            rating     INTEGER NOT NULL,
+            body       TEXT,
+            created_at TEXT NOT NULL,
             PRIMARY KEY (user_id, movie_id)
         );
 
@@ -1471,6 +1488,21 @@ def watch(movie_id):
     upcoming = bool(movie["release_date"]
                     and movie["release_date"] > date.today().isoformat())
 
+    reviews = db.execute(
+        """SELECT r.rating, r.body, r.created_at, u.username
+           FROM reviews r JOIN users u ON u.id = r.user_id
+           WHERE r.movie_id = ? ORDER BY r.created_at DESC LIMIT 50""",
+        (movie_id,),
+    ).fetchall()
+    agg = db.execute(
+        "SELECT COUNT(*) AS n, AVG(rating) AS avg FROM reviews WHERE movie_id = ?",
+        (movie_id,),
+    ).fetchone()
+    my_review = db.execute(
+        "SELECT rating, body FROM reviews WHERE user_id = ? AND movie_id = ?",
+        (session["user_id"], movie_id),
+    ).fetchone()
+
     return render_template(
         "watch.html",
         movie=movie,
@@ -1479,9 +1511,50 @@ def watch(movie_id):
         upcoming=upcoming,
         embed=yt_embed(movie["trailer"]),
         links=watch_links(movie),
+        reviews=reviews,
+        review_count=agg["n"] if agg else 0,
+        review_avg=agg["avg"] if agg and agg["avg"] is not None else None,
+        my_review=my_review,
         yt_search="https://www.youtube.com/results?search_query="
                   + urllib.parse.quote(movie["title"] + " trailer"),
     )
+
+@app.route("/review/<movie_id>", methods=["POST"])
+@login_required
+def review(movie_id):
+    db = get_db()
+    if get_movie(movie_id) is None:
+        abort(404)
+    try:
+        rating = int(request.form.get("rating", ""))
+    except ValueError:
+        rating = 0
+    if rating < 1 or rating > 5:
+        flash("Please choose a star rating from 1 to 5.", "error")
+        return redirect(url_for("watch", movie_id=movie_id) + "#reviews")
+    body = (request.form.get("body") or "").strip()[:2000]
+    db.execute(
+        """INSERT INTO reviews (user_id, movie_id, rating, body, created_at)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(user_id, movie_id) DO UPDATE
+           SET rating = excluded.rating, body = excluded.body,
+               created_at = excluded.created_at""",
+        (session["user_id"], movie_id, rating, body,
+         datetime.now(timezone.utc).isoformat()),
+    )
+    db.commit()
+    flash("Your review was saved.", "success")
+    return redirect(url_for("watch", movie_id=movie_id) + "#reviews")
+
+@app.route("/review/<movie_id>/delete", methods=["POST"])
+@login_required
+def review_delete(movie_id):
+    db = get_db()
+    db.execute("DELETE FROM reviews WHERE user_id = ? AND movie_id = ?",
+               (session["user_id"], movie_id))
+    db.commit()
+    flash("Your review was removed.", "success")
+    return redirect(url_for("watch", movie_id=movie_id) + "#reviews")
 
 @app.route("/surprise")
 @login_required
@@ -1682,6 +1755,7 @@ def admin_delete(movie_id):
     db.execute("DELETE FROM movies WHERE id = ?", (movie_id,))
     db.execute("DELETE FROM history WHERE movie_id = ?", (movie_id,))
     db.execute("DELETE FROM watchlist WHERE movie_id = ?", (movie_id,))
+    db.execute("DELETE FROM reviews WHERE movie_id = ?", (movie_id,))
     db.commit()
     flash("Movie deleted.", "success")
     return redirect(url_for("admin"))
