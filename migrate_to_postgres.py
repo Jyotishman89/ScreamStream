@@ -1,21 +1,3 @@
-"""One-time migration: copy the local SQLite catalog into a Postgres database.
-
-Run this once after creating your cloud Postgres database (e.g. Neon), pointing
-it at the database's connection URL so it can reach it from your laptop:
-
-    # PowerShell
-    $env:DATABASE_URL = "postgres://USER:PASS@HOST/DB"
-    python migrate_to_postgres.py
-
-    # bash
-    DATABASE_URL="postgres://USER:PASS@HOST/DB" python migrate_to_postgres.py
-
-It creates the schema (same one app.py uses), then bulk-copies every row from
-`screamstream.db` -> Postgres. Re-running is safe: existing rows are skipped
-(ON CONFLICT DO NOTHING), so it doubles as a "top up new movies" tool.
-
-Requires `psycopg2-binary` (already in requirements.txt): pip install -r requirements.txt
-"""
 import os
 import sqlite3
 import sys
@@ -23,7 +5,6 @@ import sys
 import psycopg2
 import psycopg2.extras
 
-# Reuse the exact schema the running app expects, so the two never drift.
 from app import PG_SCHEMA
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,9 +12,7 @@ SQLITE_PATH = os.path.join(BASE_DIR, "screamstream.db")
 TABLES = ["users", "movies", "history"]
 BATCH = 5000
 
-
 def _load_env_database_url():
-    """DATABASE_URL from the environment wins; otherwise fall back to .env."""
     url = os.environ.get("DATABASE_URL")
     if url:
         return url
@@ -46,14 +25,11 @@ def _load_env_database_url():
                     return line.split("=", 1)[1].strip().strip('"').strip("'")
     return None
 
-
 def _require_ssl(url):
-    """Cloud Postgres (Neon, etc.) needs SSL; add it if the URL omits it."""
     if "sslmode=" in url:
         return url
     sep = "&" if "?" in url else "?"
     return f"{url}{sep}sslmode=require"
-
 
 def main():
     url = _load_env_database_url()
@@ -77,12 +53,11 @@ def main():
     pg.commit()
 
     for table in TABLES:
-        # Take the live column list from SQLite so the copy adapts to the schema.
         cols = [r[1] for r in sl.execute(f"PRAGMA table_info({table})")]
         if not cols:
             print(f"  {table}: not present locally, skipping")
             continue
-        quoted = ", ".join(f'"{c}"' for c in cols)  # quote reserved words ("cast")
+        quoted = ", ".join(f'"{c}"' for c in cols)
         insert = (
             f'INSERT INTO {table} ({quoted}) VALUES %s ON CONFLICT DO NOTHING'
         )
@@ -102,8 +77,6 @@ def main():
         pg.commit()
         print(f"    {done}/{total}  done")
 
-    # SERIAL ids were inserted verbatim; advance the sequence past them so new
-    # sign-ups don't collide with copied user ids.
     cur.execute(
         "SELECT setval(pg_get_serial_sequence('users','id'), "
         "COALESCE((SELECT MAX(id) FROM users), 1), true)"
@@ -114,7 +87,6 @@ def main():
     pg.close()
     sl.close()
     print("Migration complete.")
-
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,4 @@
-/* =========================================================================
-   ScreamStream — "Emerald & Gold" theme
-   Independent identity: deep green-black base, emerald→teal blended accents,
-   warm gold highlights (logo, hero, poster ring, IMDb). Rich, cohesive motion.
-   ========================================================================= */
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -12,10 +8,10 @@
   --card: #12271f;
   --text: #f1f6f3;
   --muted: #93b0a4;
-  --accent: #10b981;        /* emerald */
-  --accent-2: #2dd4bf;      /* teal    */
+  --accent: #10b981;
+  --accent-2: #2dd4bf;
   --accent-deep: #0e9f6e;
-  --gold: #e6b450;          /* highlights + IMDb */
+  --gold: #e6b450;
   --grad: linear-gradient(120deg, #10b981 0%, #2dd4bf 100%);
   --grad-3: linear-gradient(120deg, #10b981, #2dd4bf, #10b981);
   --grad-gold: linear-gradient(120deg, #10b981, #e6b450, #10b981);
@@ -57,7 +53,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 * { scrollbar-width: thin; scrollbar-color: #2a4a3e transparent; }
 
-/* ---------- keyframes ---------- */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sheen { to { background-position: 200% center; } }
@@ -88,7 +83,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .row:nth-of-type(4) { animation-delay: .22s; }
 .row:nth-of-type(5) { animation-delay: .28s; }
 
-/* ---------- header ---------- */
 .site-header {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between;
@@ -97,7 +91,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   backdrop-filter: blur(10px) saturate(140%);
   border-bottom: 1px solid rgba(16, 185, 129, .14);
 }
-/* animated gradient hairline under the header */
+
 .site-header::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
   background: var(--grad-3); background-size: 200% auto;
@@ -139,7 +133,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
   background: rgba(255, 255, 255, .1); box-shadow: var(--ring);
 }
 
-/* ---------- buttons ---------- */
 .btn {
   position: relative; isolation: isolate; overflow: hidden;
   display: inline-block; padding: 9px 18px; border-radius: 8px; border: none;
@@ -168,7 +161,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 }
 .btn-ghost:hover { background: rgba(255, 255, 255, .16); box-shadow: var(--shadow-1); border-color: rgba(16, 185, 129, .45); }
 
-/* ---------- flashes ---------- */
 .flashes { padding: 12px 32px 0; }
 .flash {
   padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: .9rem;
@@ -177,7 +169,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .flash-error { background: #2c1116; color: #ffc4c4; border: 1px solid #7a2630; }
 .flash-success { background: #0c2a1f; color: #b6f3d4; border: 1px solid #1f6b4a; }
 
-/* ---------- auth ---------- */
 .auth-wrap {
   flex: 1; display: flex; align-items: center; justify-content: center;
   padding: 40px 16px;
@@ -207,7 +198,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .auth-switch { margin-top: 18px; color: var(--muted); font-size: .9rem; }
 .auth-switch a { color: var(--accent-2); font-weight: 600; }
 
-/* ---------- hero ---------- */
 .hero {
   position: relative; overflow: hidden; padding: 64px 32px;
   background:
@@ -236,7 +226,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 }
 .hero-inner p { color: var(--muted); font-size: 1.05rem; max-width: 640px; }
 
-/* ---------- AI ask ---------- */
 .ask-form { display: flex; gap: 10px; }
 .ask-form input {
   flex: 1; padding: 13px 16px; border-radius: 10px; font-size: 1.05rem;
@@ -268,7 +257,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
   animation: badgePulse 2.6s ease-in-out infinite;
 }
 
-/* ---------- filter bar ---------- */
 .filter-bar { display: flex; gap: 10px; padding: 8px 32px 4px; flex-wrap: wrap; }
 .chip {
   padding: 7px 16px; border-radius: 999px; background: var(--bg-soft);
@@ -281,7 +269,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .chip-active:hover { filter: brightness(1.08); }
 .result-note { padding: 12px 32px 0; color: var(--muted); }
 
-/* ---------- rows / cards ---------- */
 .row { padding: 22px 32px; }
 .row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .row-title { font-size: 1.3rem; margin-bottom: 14px; position: relative; padding-left: 14px; }
@@ -321,7 +308,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   position: relative; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden;
   background: #102019;
 }
-/* gold→emerald ring that appears on hover */
+
 .poster::after {
   content: ""; position: absolute; inset: 0; border-radius: 10px; z-index: 3;
   padding: 2px; pointer-events: none; opacity: 0;
@@ -378,7 +365,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .empty { padding: 40px 32px; color: var(--muted); }
 .empty a { color: var(--accent-2); font-weight: 600; }
 
-/* ---------- watch page ---------- */
 .back-link { display: inline-block; padding: 18px 32px 4px; color: var(--muted); transition: color .2s ease, transform .2s var(--ease); }
 .back-link:hover { color: var(--accent-2); transform: translateX(-3px); }
 .player-wrap { background: #000; padding: 0 32px; display: flex; justify-content: center; }
@@ -406,7 +392,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .not-here { background: #2a2410; border: 1px solid #6b5a1f; color: #f1e3b0; padding: 12px 14px; border-radius: 10px; margin-bottom: 18px; font-size: .92rem; }
 .coming { background: #0e2533; border: 1px solid #1f5d7a; color: #bfe6f5; padding: 12px 14px; border-radius: 10px; margin-bottom: 18px; font-size: .92rem; }
 
-/* facts grid */
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; max-width: 760px; margin: 4px 0 18px; }
 .facts div {
   background: var(--bg-soft); border: 1px solid rgba(255, 255, 255, .08);
@@ -416,7 +401,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .facts div:hover { transform: translateY(-3px); border-color: rgba(16, 185, 129, .45); box-shadow: var(--shadow-1); }
 .facts span { display: block; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
 
-/* keyword chips */
 .keywords { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
 .kw {
   font-size: .78rem; color: var(--muted); background: var(--bg-soft);
@@ -425,7 +409,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 }
 .kw:hover { transform: translateY(-2px); color: var(--text); border-color: rgba(45, 212, 191, .5); }
 
-/* cast */
 .cast-scroll { display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 12px; }
 .cast-card { flex: 0 0 120px; text-align: center; transition: transform .25s var(--ease-out); }
 .cast-card:hover { transform: translateY(-5px); }
@@ -442,7 +425,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .where-btns { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn-platform { color: #fff; background: #2c4a3e; }
 .btn-platform:hover { filter: brightness(1.14); box-shadow: var(--shadow-2); }
-/* platform buttons keep each service's real brand color */
+
 .p-netflix { background: #e50914; }
 .p-primevideo { background: #1399ff; }
 .p-mxplayer { background: #f9a825; color: #111; }
@@ -450,12 +433,10 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .p-justwatch { background: #ffba08; color: #111; }
 .where-note { color: var(--muted); font-size: .82rem; margin-top: 12px; }
 
-/* ---------- page head (history / admin) ---------- */
 .page-head { display: flex; align-items: center; justify-content: space-between; padding: 26px 32px 6px; gap: 16px; }
 .page-head h1 { font-size: 1.8rem; }
 .muted { color: var(--muted); }
 
-/* ---------- TMDB import panel ---------- */
 .tmdb-panel { margin: 8px 32px 0; padding: 18px 20px; border-radius: 14px; background: var(--bg-soft); border: 1px solid rgba(16, 185, 129, .16); }
 .tmdb-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
 .tmdb-head h2 { font-size: 1.15rem; }
@@ -495,7 +476,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .setup-note ol { margin: 10px 0 10px 20px; }
 .setup-note pre { background: #06120e; border: 1px solid rgba(16, 185, 129, .22); border-radius: 8px; padding: 10px 12px; margin-top: 6px; font-size: .82rem; overflow-x: auto; color: #bff0d8; }
 
-/* ---------- admin ---------- */
 .admin-grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; padding: 16px 32px 40px; align-items: start; }
 .admin-form { background: var(--bg-soft); border: 1px solid rgba(16, 185, 129, .16); border-radius: 14px; padding: 20px; }
 .admin-form h2, .admin-list h2 { font-size: 1.15rem; margin-bottom: 14px; }
@@ -525,10 +505,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
 }
 .btn-del:hover { background: var(--grad); color: #04120c; transform: translateY(-1px); border-color: transparent; }
 
-/* ---------- footer ---------- */
 .site-footer { margin-top: auto; padding: 24px 32px; color: var(--muted); font-size: .82rem; border-top: 1px solid rgba(16, 185, 129, .12); }
 
-/* ---------- responsive ---------- */
 @media (max-width: 860px) { .admin-grid { grid-template-columns: 1fr; } }
 @media (max-width: 640px) {
   .site-header { padding: 12px 16px; }
@@ -540,7 +518,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .page-head, .admin-grid, .cards-page { padding-left: 16px; padding-right: 16px; }
 }
 
-/* ---------- respect reduced-motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

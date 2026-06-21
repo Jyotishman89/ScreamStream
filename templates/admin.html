@@ -7,7 +7,6 @@
   <span class="muted">{{ movies|length }} title(s)</span>
 </section>
 
-<!-- Import from TMDB -->
 <section class="tmdb-panel">
   <div class="tmdb-head">
     <h2>Import from TMDB</h2>
@@ -86,7 +85,7 @@ python app.py</pre>
 </section>
 
 <div class="admin-grid">
-  <!-- Add movie form -->
+
   <form class="admin-form" method="post" action="{{ url_for('admin_add') }}">
     <h2>Add a movie</h2>
 
@@ -149,7 +148,6 @@ python app.py</pre>
     <button class="btn btn-primary" type="submit">Add movie</button>
   </form>
 
-  <!-- Existing movies -->
   <div class="admin-list">
     <h2>Current catalog</h2>
     <table>

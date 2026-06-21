@@ -29,13 +29,7 @@ if USE_PG:
 else:
     IntegrityError = sqlite3.IntegrityError
 
-
 def _load_env_file():
-    """Load KEY=value lines from a local .env file (no dependency).
-
-    Real environment variables always win, so .env is just a convenience for
-    keeping API keys out of the shell and out of source control.
-    """
     path = os.path.join(BASE_DIR, ".env")
     if not os.path.exists(path):
         return
@@ -46,7 +40,6 @@ def _load_env_file():
                 continue
             key, _, val = line.partition("=")
             os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
-
 
 _load_env_file()
 
@@ -71,13 +64,11 @@ TMDB_REGION = os.environ.get("TMDB_REGION", "IN").upper()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
-
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
 
 TMDB_API = "https://api.themoviedb.org/3"
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
 TMDB_IMG_PROFILE = "https://image.tmdb.org/t/p/w185"
-
 
 TMDB_GENRE_NAMES = {
     28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
@@ -90,7 +81,6 @@ SORT_WHITELIST = {
     "revenue.desc", "vote_count.desc",
 }
 
-
 PROVIDER_ALIASES = {
     "Amazon Prime Video": "Prime Video",
     "Amazon Video": "Prime Video",
@@ -99,23 +89,16 @@ PROVIDER_ALIASES = {
     "Hotstar": "Disney+ Hotstar",
 }
 
-
 TMDB_DISCOVER = {
     name: f"&with_genres={gid}" for gid, name in TMDB_GENRE_NAMES.items()
 }
 TMDB_DISCOVER["Anime"] = "&with_genres=16&with_original_language=ja"
 
-
-# --------------------------------------------------------------------------- #
-#  Small helpers
-# --------------------------------------------------------------------------- #
 def slugify(text):
     s = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
     return s or "movie"
 
-
 def extract_yt_id(value):
-    """Accept a YouTube URL or a raw id and return the 11-char video id."""
     if not value:
         return ""
     value = value.strip()
@@ -131,31 +114,25 @@ def extract_yt_id(value):
             return m.group(1)
     if re.fullmatch(r"[A-Za-z0-9_-]{11}", value):
         return value
-    return value  # store whatever was given; embed may still work
-
+    return value
 
 def yt_thumb(video_id):
     return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg" if video_id else ""
 
-
 def yt_embed(video_id):
     return f"https://www.youtube.com/embed/{video_id}" if video_id else ""
 
-
 def watch_links(movie):
-    """Build 'where to watch' button links for a movie row."""
     q = urllib.parse.quote(movie["title"])
     links = []
     names = [p.strip() for p in (movie["platforms"] or "").split(",") if p.strip()]
     for name in names:
         base = PLATFORM_SEARCH.get(name, PLATFORM_SEARCH["JustWatch"])
         links.append({"name": name, "url": base.format(q=q)})
-    # JustWatch aggregates real, region-aware availability — always offer it.
     if not any(l["name"] == "JustWatch" for l in links):
         links.append({"name": "JustWatch",
                       "url": PLATFORM_SEARCH["JustWatch"].format(q=q)})
     return links
-
 
 GENRE_COLORS = {
     "Action": ("#7f1d1d", "#b91c1c"), "Adventure": ("#14532d", "#16a34a"),
@@ -171,9 +148,7 @@ GENRE_COLORS = {
 }
 DEFAULT_COLORS = ("#15151f", "#2a2a38")
 
-
 def _wrap(text, width):
-    """Greedy word-wrap into lines of at most `width` characters."""
     lines, cur = [], ""
     for word in text.split():
         if cur and len(cur) + 1 + len(word) > width:
@@ -185,9 +160,7 @@ def _wrap(text, width):
         lines.append(cur)
     return lines
 
-
 def title_card_svg(movie):
-    """Render a 2:3 poster-shaped SVG 'title card' for a movie row."""
     title = movie["title"] or "Untitled"
     c1, c2 = GENRE_COLORS.get(movie["genre"], DEFAULT_COLORS)
 
@@ -237,9 +210,7 @@ def title_card_svg(movie):
         f'{title_el}{year_el}{genre_el}{rating_el}</svg>'
     )
 
-
 def _http_json(url, headers=None):
-    """GET a URL and return parsed JSON, or None on any failure."""
     try:
         h = {"User-Agent": "ScreamStream/1.0"}
         if headers:
@@ -250,10 +221,7 @@ def _http_json(url, headers=None):
     except Exception:
         return None
 
-
 def _post_json(url, payload, headers=None, timeout=25):
-    """POST a JSON body and return (parsed_json, error_message). Used for the
-    LLM API, where we want the error text (bad key, rate limit) surfaced."""
     h = {"User-Agent": "ScreamStream/1.0", "Content-Type": "application/json"}
     if headers:
         h.update(headers)
@@ -271,9 +239,7 @@ def _post_json(url, payload, headers=None, timeout=25):
     except Exception as e:
         return None, str(e)
 
-
 def map_genre(names):
-    """Collapse TMDB's genre list into one of our row genres when possible."""
     s = set(names or [])
     if "Animation" in s:
         return "Anime"
@@ -283,9 +249,7 @@ def map_genre(names):
         return "Thriller"
     return names[0] if names else "Drama"
 
-
 def pick_trailer(results):
-    """Pick the best YouTube trailer key from a TMDB /videos result list."""
     yt = [v for v in (results or []) if v.get("site") == "YouTube"]
     for ok in (
         lambda v: v.get("type") == "Trailer" and v.get("official"),
@@ -298,9 +262,7 @@ def pick_trailer(results):
                 return v.get("key", "")
     return ""
 
-
 def pick_providers(data, region):
-    """Collect 'where to watch' provider names for a region from TMDB."""
     region_data = (data.get("results") or {}).get(region) or {}
     names = []
     for kind in ("flatrate", "ads", "free", "rent", "buy"):
@@ -311,9 +273,7 @@ def pick_providers(data, region):
                 names.append(name)
     return names[:6]
 
-
 def parse_details(d):
-    """Turn a TMDB /movie/{id} payload into our movie fields."""
     return {
         "title": d.get("title") or d.get("name") or "",
         "year": int(d["release_date"][:4]) if d.get("release_date") else None,
@@ -332,9 +292,7 @@ def parse_details(d):
         "revenue": d.get("revenue") or 0,
     }
 
-
 def parse_credits(credits):
-    """Return (director string, cast JSON) from a TMDB credits payload."""
     crew = credits.get("crew", []) if credits else []
     directors = [c["name"] for c in crew if c.get("job") == "Director"]
     cast = []
@@ -346,11 +304,9 @@ def parse_credits(credits):
         })
     return ", ".join(directors), json.dumps(cast)
 
-
 def parse_keywords(kw):
     items = (kw or {}).get("keywords") or (kw or {}).get("results") or []
     return ", ".join(k["name"] for k in items[:12])
-
 
 def parse_omdb(data):
     out = {}
@@ -371,10 +327,8 @@ def parse_omdb(data):
         out["mpaa"] = rated
     return out
 
-
 def _trailer_query(title, year):
     return f"{title} {year} official trailer" if year else f"{title} official trailer"
-
 
 def _youtube_search_scrape(query):
     url = "https://www.youtube.com/results?search_query=" + urllib.parse.quote(query)
@@ -392,7 +346,6 @@ def _youtube_search_scrape(query):
     m = re.search(r'"videoId":"([A-Za-z0-9_-]{11})"', html)
     return m.group(1) if m else ""
 
-
 def _youtube_search_api(query):
     if not YOUTUBE_API_KEY:
         return ""
@@ -406,16 +359,13 @@ def _youtube_search_api(query):
             return vid
     return ""
 
-
 def youtube_trailer(title, year):
     if not title:
         return ""
     query = _trailer_query(title, year)
     return _youtube_search_scrape(query) or _youtube_search_api(query)
 
-
 def streaming_providers(imdb_id, region):
-    """Region-accurate 'where to watch' provider names via Streaming Availability."""
     if not (RAPIDAPI_KEY and imdb_id):
         return []
     data = _http_json(
@@ -436,9 +386,7 @@ def streaming_providers(imdb_id, region):
             names.append(name)
     return names[:6]
 
-
 def tmdb_search(query):
-    """Search TMDB for a title; return a short list of candidates."""
     if not (TMDB_API_KEY and query):
         return []
     data = _http_json(
@@ -455,7 +403,6 @@ def tmdb_search(query):
             "overview": (r.get("overview") or "")[:170],
         })
     return results
-
 
 def tmdb_import(tmdb_id):
     if not TMDB_API_KEY:
@@ -480,12 +427,10 @@ def tmdb_import(tmdb_id):
         info.update({k: v for k, v in omdb.items() if v is not None})
     return info
 
-
 def discover_url(extra, page):
     return (f"{TMDB_API}/discover/movie?api_key={TMDB_API_KEY}"
             f"&sort_by=popularity.desc&include_adult=false&vote_count.gte=40"
             f"&page={page}{extra}")
-
 
 def tmdb_bulk_import(genre_label, pages):
     if not TMDB_API_KEY:
@@ -531,11 +476,8 @@ def tmdb_bulk_import(genre_label, pages):
             added += 1
     return added
 
-
 def _row_get(row, key):
-    """Safe column access for a sqlite Row (older DBs may lack a column)."""
     return row[key] if key in row.keys() else None
-
 
 def enrich_movie(movie):
     if movie["enriched"]:
@@ -546,9 +488,7 @@ def enrich_movie(movie):
         return _enrich_omdb(movie)
     return movie
 
-
 def _enrich_omdb(movie):
-    """Fill poster / plot / cast / scores for an IMDb-sourced title via OMDb."""
     data = _http_json(
         f"https://www.omdbapi.com/?i={_row_get(movie, 'imdb_tt')}"
         f"&apikey={OMDB_API_KEY}&plot=full")
@@ -573,7 +513,6 @@ def _enrich_omdb(movie):
     if rt_raw.isdigit():
         runtime = int(rt_raw)
 
-    # TMDB-free extras: real trailer (YouTube) + where-to-watch (RapidAPI).
     title = clean(data.get("Title")) or movie["title"]
     year = (clean(data.get("Year")) or "")[:4]
     trailer = youtube_trailer(title, year)
@@ -599,9 +538,7 @@ def _enrich_omdb(movie):
     db.commit()
     return get_movie(movie["id"])
 
-
 def _enrich_tmdb(movie):
-    """Lazily fetch a bulk-imported movie's trailer / providers / real scores."""
     info = tmdb_import(movie["tmdb_id"])
     db = get_db()
     if info:
@@ -635,7 +572,6 @@ def _enrich_tmdb(movie):
     db.commit()
     return get_movie(movie["id"])
 
-
 AI_SYSTEM = """You are a movie recommendation engine that channels the collective \
 wisdom of film communities like Reddit (r/MovieSuggestions, r/movies, r/horror, \
 r/TrueFilm, r/criterion) plus critic and audience consensus.
@@ -659,19 +595,10 @@ Rules:
   return concrete title picks, not filters.
 - Output ONLY the JSON object, nothing before or after it."""
 
-
 def ai_enabled():
-    """The 'Ask anything' box works whenever a (free) Groq key is configured."""
     return bool(GROQ_API_KEY)
 
-
 def ai_query_plan(query):
-    """Ask the LLM for an audience-style answer + real title picks.
-
-    Returns (plan, error_message); plan has keys 'answer' and 'titles'. Uses
-    Groq's free OpenAI-compatible API. The films are matched to our own catalog
-    afterwards, so no TMDB is involved.
-    """
     if not GROQ_API_KEY:
         return None, ("AI search needs a free Groq API key — get one at "
                       "console.groq.com and set GROQ_API_KEY in .env.")
@@ -699,9 +626,7 @@ def ai_query_plan(query):
     plan.setdefault("titles", [])
     return plan, None
 
-
 def catalog_match(title, year=None):
-    """Find a real film in the local catalog by title (year-aware, best-effort)."""
     if not title or not title.strip():
         return None
     db = get_db()
@@ -727,7 +652,6 @@ def catalog_match(title, year=None):
             pass
     return rows[0]
 
-
 def tmdb_discover(params):
     q = [f"api_key={TMDB_API_KEY}", "include_adult=false", "vote_count.gte=25"]
     sort = (params.get("sort_by") or "popularity.desc")
@@ -747,7 +671,6 @@ def tmdb_discover(params):
     data = _http_json(f"{TMDB_API}/discover/movie?" + "&".join(q))
     return (data or {}).get("results", [])[:18]
 
-
 def resolve_title(title, year=None):
     if not title:
         return None
@@ -759,9 +682,7 @@ def resolve_title(title, year=None):
     res = (data or {}).get("results", [])
     return res[0] if res else None
 
-
 def ensure_movie(item):
-    """Insert a TMDB list item into the catalog (if new) and return its row."""
     tid = item.get("id")
     db = get_db()
     if tid:
@@ -782,11 +703,8 @@ def ensure_movie(item):
                        release_date=item.get("release_date") or None)
     return get_movie(mid)
 
-
-
 def _pg_translate(sql):
     return sql.replace("?", "%s")
-
 
 class _PgConn:
 
@@ -807,7 +725,6 @@ class _PgConn:
     def close(self):
         self._raw.close()
 
-
 def get_db():
     if "db" not in g:
         if USE_PG:
@@ -818,7 +735,6 @@ def get_db():
             g.db = sqlite3.connect(DATABASE)
             g.db.row_factory = sqlite3.Row
     return g.db
-
 
 @app.teardown_appcontext
 def close_db(exception):
@@ -868,7 +784,6 @@ CREATE TABLE IF NOT EXISTS history (
 );
 CREATE INDEX IF NOT EXISTS idx_movies_genre_votes ON movies(genre, imdb_votes);
 """
-
 
 def init_db():
     if USE_PG:
@@ -922,7 +837,6 @@ def init_db():
         );
         """
     )
-    # Migrate older databases that predate newer columns.
     cols = {row[1] for row in db.execute("PRAGMA table_info(movies)")}
     add = {
         "tmdb_id": "INTEGER",
@@ -935,21 +849,18 @@ def init_db():
         "director": "TEXT",
         "cast": "TEXT",
         "keywords": "TEXT",
-        "imdb_tt": "TEXT",       # IMDb id (tt…) for OMDb enrichment
-        "imdb_votes": "INTEGER", # IMDb vote count, for popularity ordering
+        "imdb_tt": "TEXT",
+        "imdb_votes": "INTEGER",
     }
     for name, decl in add.items():
         if name not in cols:
             db.execute(f"ALTER TABLE movies ADD COLUMN {name} {decl}")
-    # Speeds up the per-genre rows / grids once the catalog is large.
     db.execute("CREATE INDEX IF NOT EXISTS idx_movies_genre_votes "
                "ON movies(genre, imdb_votes)")
     db.commit()
     db.close()
 
-
 def seed_movies():
-    """Insert a starter catalog once, if the movies table is empty."""
     db = get_db()
     if db.execute("SELECT COUNT(*) AS n FROM movies").fetchone()["n"] > 0:
         return
@@ -1022,17 +933,14 @@ def seed_movies():
         )
     db.commit()
 
-
 def get_movie(movie_id):
     return get_db().execute(
         "SELECT * FROM movies WHERE id = ?", (movie_id,)
     ).fetchone()
 
-
 def insert_movie(title, genre, year, mpaa, imdb, rotten, runtime,
                  description, poster, trailer, video, platforms,
                  tmdb_id=None, enriched=1, release_date=None):
-    """Insert a movie, generating a unique slug id. Returns the id."""
     db = get_db()
     base = slugify(title)
     movie_id, n = base, 2
@@ -1052,7 +960,6 @@ def insert_movie(title, genre, year, mpaa, imdb, rotten, runtime,
     db.commit()
     return movie_id
 
-
 def genres_in_order(present):
     ordered = [g_ for g_ in GENRE_ORDER if g_ in present]
     ordered += sorted(g_ for g_ in present if g_ not in GENRE_ORDER)
@@ -1066,7 +973,6 @@ def login_required(view):
             return redirect(url_for("login", next=request.path))
         return view(*args, **kwargs)
     return wrapped
-
 
 def admin_required(view):
     @wraps(view)
@@ -1113,7 +1019,6 @@ def register():
 
     return render_template("register.html")
 
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -1141,7 +1046,6 @@ def login():
 
     return render_template("login.html")
 
-
 @app.route("/logout")
 def logout():
     session.clear()
@@ -1150,7 +1054,6 @@ def logout():
 
 ROW_LIMIT = 24     
 PAGE_SIZE = 60      
-
 
 @app.route("/")
 @login_required
@@ -1222,7 +1125,6 @@ def index():
         coming_soon=coming_soon,
     )
 
-
 @app.route("/ask")
 @login_required
 def ask():
@@ -1241,7 +1143,6 @@ def ask():
         flash(err, "error")
         return redirect(url_for("index", q=query))
 
-    # Match the LLM's real-title picks against our own catalog (no TMDB).
     results, seen = [], set()
     for t in (plan.get("titles") or [])[:15]:
         m = catalog_match(t.get("title", ""), t.get("year"))
@@ -1253,18 +1154,15 @@ def ask():
         "ask.html", query=query, answer=plan.get("answer", ""), results=results,
     )
 
-
 @app.route("/poster/<movie_id>.svg")
 @login_required
 def poster(movie_id):
-    """Serve a generated title-card thumbnail for titles without a real poster."""
     movie = get_movie(movie_id)
     if movie is None:
         abort(404)
     resp = Response(title_card_svg(movie), mimetype="image/svg+xml")
     resp.headers["Cache-Control"] = "public, max-age=86400"
     return resp
-
 
 @app.route("/watch/<movie_id>")
 @login_required
@@ -1273,10 +1171,8 @@ def watch(movie_id):
     if movie is None:
         abort(404)
 
-    # First view of a bulk-imported title: fetch trailer / providers / scores.
     movie = enrich_movie(movie)
 
-    # Record / refresh watch history.
     db = get_db()
     db.execute(
         """INSERT INTO history (user_id, movie_id, watched_at) VALUES (?, ?, ?)
@@ -1310,7 +1206,6 @@ def watch(movie_id):
                   + urllib.parse.quote(movie["title"] + " trailer"),
     )
 
-
 @app.route("/history")
 @login_required
 def history():
@@ -1320,7 +1215,6 @@ def history():
         (session["user_id"],),
     ).fetchall()
     return render_template("history.html", movies=rows)
-
 
 @app.route("/history/clear", methods=["POST"])
 @login_required
@@ -1350,7 +1244,6 @@ def admin():
         bulk_genres=list(TMDB_DISCOVER.keys()) + ["Upcoming"],
     )
 
-
 @app.route("/admin/import", methods=["POST"])
 @admin_required
 def admin_import():
@@ -1375,7 +1268,6 @@ def admin_import():
     flash(f"Imported “{info['title']}” from TMDB.", "success")
     return redirect(url_for("admin"))
 
-
 @app.route("/admin/bulk", methods=["POST"])
 @admin_required
 def admin_bulk():
@@ -1397,7 +1289,6 @@ def admin_bulk():
         flash("No new titles imported (already in catalog or none found).",
               "error")
     return redirect(url_for("admin"))
-
 
 @app.route("/admin/add", methods=["POST"])
 @admin_required
@@ -1428,7 +1319,6 @@ def admin_add():
     flash(f"Added “{title}”.", "success")
     return redirect(url_for("admin"))
 
-
 @app.route("/admin/delete/<movie_id>", methods=["POST"])
 @admin_required
 def admin_delete(movie_id):
@@ -1439,12 +1329,7 @@ def admin_delete(movie_id):
     flash("Movie deleted.", "success")
     return redirect(url_for("admin"))
 
-# Create the schema + seed data on startup. On a "scale to zero" serverless host
-# (e.g. Vercel) the database can be briefly unreachable while it wakes and the
-# filesystem is read-only, so this must never crash module import: if it fails
-# here it is retried on the first request that comes in.
 _db_ready = False
-
 
 def _ensure_db_ready():
     global _db_ready
@@ -1453,19 +1338,16 @@ def _ensure_db_ready():
         seed_movies()
         _db_ready = True
 
-
 @app.before_request
 def _bootstrap_db():
     if not _db_ready:
         _ensure_db_ready()
 
-
 with app.app_context():
     try:
         _ensure_db_ready()
     except Exception:
-        pass  # retried lazily on the first request (see _bootstrap_db)
-
+        pass
 
 if __name__ == "__main__":
     app.run(
