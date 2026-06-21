@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ movie.title }} — ScreamStream{% endblock %}
+{% block meta_description %}{{ (movie.description or movie.title)|truncate(180) }}{% endblock %}
+{% block og_type %}video.movie{% endblock %}
+{% block og_title %}{{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %} — ScreamStream{% endblock %}
+{% block og_description %}{{ (movie.description or movie.title)|truncate(180) }}{% endblock %}
+{% block og_image %}{% if movie.poster %}{{ movie.poster }}{% else %}{{ url_for('static', filename='icons/icon-512.png', _external=True) }}{% endif %}{% endblock %}
 
 {% block content %}
 <a class="back-link" href="{{ url_for('index', genre=movie.genre) }}">‹ Back to {{ movie.genre }}</a>

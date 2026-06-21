@@ -63,6 +63,56 @@
   --ring: 0 0 0 2px rgba(16, 185, 129, .6);
 }
 
+html[data-theme="light"] {
+  --bg: #eef2f0;
+  --bg-2: #e7ede9;
+  --bg-soft: #ffffff;
+  --card: #ffffff;
+  --text: #122019;
+  --muted: #51665c;
+  --accent: #0e9f6e;
+  --accent-2: #0d9488;
+  --accent-deep: #0b8a5f;
+  --gold: #b07d0a;
+  --shadow-1: 0 2px 10px rgba(20, 40, 30, .12);
+  --shadow-2: 0 22px 48px -14px rgba(20, 40, 30, .28);
+  --glow: 0 14px 40px -8px rgba(16, 185, 129, .25);
+  --glow-gold: 0 14px 40px -8px rgba(176, 125, 10, .22);
+  --ring: 0 0 0 2px rgba(14, 159, 110, .45);
+}
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 600px at 85% -8%, rgba(16, 185, 129, .10), transparent 60%),
+    radial-gradient(900px 600px at 0% 0%, rgba(13, 148, 136, .07), transparent 55%),
+    var(--bg);
+}
+html[data-theme="light"] .site-header {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .92), rgba(238, 242, 240, .6));
+  border-bottom-color: rgba(20, 40, 30, .12);
+}
+html[data-theme="light"] .site-footer { border-color: rgba(20, 40, 30, .1); }
+html[data-theme="light"] .card,
+html[data-theme="light"] .account-card,
+html[data-theme="light"] .review-form,
+html[data-theme="light"] .review-item,
+html[data-theme="light"] .stat-card { background: #fff; border-color: rgba(20, 40, 30, .12); }
+html[data-theme="light"] .btn-ghost,
+html[data-theme="light"] .chip,
+html[data-theme="light"] .search input,
+html[data-theme="light"] .filters select,
+html[data-theme="light"] .filters input,
+html[data-theme="light"] .account-form input,
+html[data-theme="light"] .review-form textarea,
+html[data-theme="light"] .totp-key {
+  background: #f4f7f5; border-color: rgba(20, 40, 30, .16); color: var(--text);
+}
+html[data-theme="light"] .btn-ghost:hover { background: #e6ece9; }
+html[data-theme="light"] .pw-track,
+html[data-theme="light"] .stars label,
+html[data-theme="light"] .r-stars-off { color: rgba(20, 40, 30, .2); }
+html[data-theme="light"] .pw-track { background: rgba(20, 40, 30, .12); }
+html[data-theme="light"] .cards-scroll::-webkit-scrollbar-thumb { background: #b9c9c1; }
+
 html { scroll-behavior: smooth; }
 
 body {
@@ -715,3 +765,16 @@ a.stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .totp-details summary { cursor: pointer; color: var(--muted); font-size: .85rem; }
 .totp-uri { font-family: "Consolas", monospace; font-size: .78rem; color: #9fb4ab; word-break: break-all; margin-top: 8px; }
 .form-actions { display: flex; gap: 10px; align-items: center; }
+
+.theme-form { margin: 0; }
+.theme-form-solo { margin-left: auto; }
+.theme-toggle {
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 10px; width: 38px; height: 38px; cursor: pointer;
+  font-size: 1rem; line-height: 1; color: var(--text);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .2s ease, transform .15s var(--ease), border-color .2s ease;
+}
+.theme-toggle:hover { background: rgba(255, 255, 255, .14); transform: translateY(-1px); border-color: rgba(16, 185, 129, .45); }
+html[data-theme="light"] .theme-toggle { background: #f4f7f5; border-color: rgba(20, 40, 30, .16); }
+html[data-theme="light"] .theme-toggle:hover { background: #e6ece9; }

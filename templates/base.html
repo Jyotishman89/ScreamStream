@@ -1,11 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="{{ theme }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ScreamStream{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Explore movies, trailers, ratings and where to watch them on ScreamStream.{% endblock %}">
+  <meta name="theme-color" content="{{ '#ffffff' if theme == 'light' else '#06120e' }}">
+  <meta property="og:site_name" content="ScreamStream">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}ScreamStream{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Explore movies, trailers, ratings and where to watch them.{% endblock %}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='icons/icon-512.png', _external=True) }}{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ self.og_title() }}">
+  <meta name="twitter:description" content="{{ self.og_description() }}">
+  <meta name="twitter:image" content="{{ self.og_image() }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='confirm.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='pwa.js') }}" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -22,12 +38,27 @@
         <input type="text" name="q" placeholder="Search titles…"
                value="{{ query|default('') }}">
       </form>
+      <form class="theme-form" action="{{ url_for('set_theme') }}" method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <button class="theme-toggle" type="submit"
+                title="Switch to {{ 'dark' if theme == 'light' else 'light' }} theme"
+                aria-label="Switch theme">{{ '🌙' if theme == 'light' else '☀️' }}</button>
+      </form>
       <a class="user" href="{{ url_for('account') }}">{{ session.get('username') }}</a>
       <form class="logout-form" action="{{ url_for('logout') }}" method="post">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <button class="btn btn-ghost" type="submit">Log out</button>
       </form>
     </nav>
+    {% else %}
+    <form class="theme-form theme-form-solo" action="{{ url_for('set_theme') }}" method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+      <button class="theme-toggle" type="submit"
+              title="Switch to {{ 'dark' if theme == 'light' else 'light' }} theme"
+              aria-label="Switch theme">{{ '🌙' if theme == 'light' else '☀️' }}</button>
+    </form>
     {% endif %}
   </header>
 

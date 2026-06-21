@@ -23,13 +23,14 @@ from html import escape as html_escape
 
 from flask import (
     Flask, Response, abort, flash, g, redirect, render_template, request,
-    session, url_for
+    send_from_directory, session, url_for
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
 mimetypes.add_type("font/woff2", ".woff2")
 mimetypes.add_type("font/woff", ".woff")
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, "screamstream.db")
@@ -179,6 +180,12 @@ def _inject_csrf():
         token = secrets.token_urlsafe(32)
         session["_csrf"] = token
     return {"csrf_token": token}
+
+
+@app.context_processor
+def _inject_theme():
+    theme = request.cookies.get("theme", "dark")
+    return {"theme": "light" if theme == "light" else "dark"}
 
 
 @app.context_processor
@@ -1498,6 +1505,25 @@ def reset_password(token):
             flash("Your password has been reset. Please log in.", "success")
             return redirect(url_for("login"))
     return render_template("reset.html", token=token)
+
+@app.route("/sw.js")
+def service_worker():
+    resp = send_from_directory(app.static_folder, "sw.js",
+                               mimetype="application/javascript")
+    resp.headers["Service-Worker-Allowed"] = "/"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+@app.route("/theme", methods=["POST"])
+def set_theme():
+    current = request.cookies.get("theme", "dark")
+    new = "dark" if current == "light" else "light"
+    nxt = request.form.get("next", "")
+    target = nxt if nxt.startswith("/") and not nxt.startswith("//") else url_for("index")
+    resp = redirect(target)
+    resp.set_cookie("theme", new, max_age=31536000, samesite="Lax",
+                    secure=USE_PG, httponly=False)
+    return resp
 
 @app.route("/logout", methods=["POST"])
 def logout():
