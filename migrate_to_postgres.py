@@ -1,7 +1,7 @@
 """One-time migration: copy the local SQLite catalog into a Postgres database.
 
-Run this once after creating your Render Postgres instance, pointing it at the
-database's **External** connection URL so it can reach it from your laptop:
+Run this once after creating your cloud Postgres database (e.g. Neon), pointing
+it at the database's connection URL so it can reach it from your laptop:
 
     # PowerShell
     $env:DATABASE_URL = "postgres://USER:PASS@HOST/DB"
@@ -48,7 +48,7 @@ def _load_env_database_url():
 
 
 def _require_ssl(url):
-    """Render's external Postgres needs SSL; add it if the URL omits it."""
+    """Cloud Postgres (Neon, etc.) needs SSL; add it if the URL omits it."""
     if "sslmode=" in url:
         return url
     sep = "&" if "?" in url else "?"
@@ -60,7 +60,7 @@ def main():
     if not url:
         sys.exit(
             "DATABASE_URL is not set.\n"
-            "Set it to your Render Postgres *External* URL and re-run, e.g.\n"
+            "Set it to your cloud Postgres connection URL (e.g. Neon) and re-run, e.g.\n"
             '  $env:DATABASE_URL = "postgres://user:pass@host/db"   (PowerShell)'
         )
     if not os.path.exists(SQLITE_PATH):

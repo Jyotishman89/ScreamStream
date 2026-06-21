@@ -5,10 +5,10 @@ catalog by genre, stream the free in-app titles, or jump to the trailer +
 "where to watch" links for everything else. An **"Ask anything"** box answers
 natural-language questions with real films from the catalog.
 
-### 🔗 Live demo — **https://screamstream-dae0.onrender.com**
+### 🔗 Live demo — **https://scream-stream.vercel.app**
 
-> Hosted on Render's free tier. If the site's been idle, the **first load takes
-> ~30–60s to wake up** — that's normal. Create an account to browse.
+> Hosted free on **Vercel** (serverless) with a **Neon** PostgreSQL database —
+> effectively always-on, with no spin-down wait. Create an account to browse.
 
 ---
 
@@ -54,13 +54,13 @@ What makes this more than a CRUD demo:
 ## Tech stack
 
 - **Python 3.12** · **Flask 3** · **Jinja2** — server-rendered; *no* JS framework.
-- **SQLite** (dev) / **PostgreSQL via psycopg2** (prod) — same code, dual-mode.
+- **SQLite** (dev) / **PostgreSQL via psycopg2** (prod, on **Neon**) — same code, dual-mode.
 - **Werkzeug** password hashing (PBKDF2) · **Gunicorn** WSGI server.
 - **HTML5 + a single hand-written CSS file** — no CSS framework; `<video>` for
   streams, YouTube `<iframe>` for trailers.
 - **Data:** IMDb datasets (catalog) · OMDb (posters/scores) · YouTube (trailers) ·
   Streaming Availability API (where-to-watch) · Groq LLM (Ask anything).
-- **Hosting:** Render web service + free managed PostgreSQL (`render.yaml` Blueprint).
+- **Hosting:** Vercel (serverless Python) + Neon (managed PostgreSQL), configured by `vercel.json`.
 
 ---
 
@@ -94,13 +94,16 @@ list (all optional; the app degrades gracefully without them).
 
 ## Deployment
 
-The repo ships a **Render Blueprint** (`render.yaml`) that provisions the web
-service **and** a free PostgreSQL database, wiring its connection string into the
-app as `DATABASE_URL`. After deploy, load the catalog into Postgres once with
-`python migrate_to_postgres.py`. Full walkthrough: **[`DEPLOY.md`](DEPLOY.md)**.
+Live on **Vercel** (serverless Python) backed by a free **Neon** PostgreSQL
+database. The repo ships `vercel.json`, which points Vercel's Python runtime at
+`app.py` and bundles the templates/static. The flow: create a Neon database,
+load the catalog into it once with `python migrate_to_postgres.py`, then import
+the repo on Vercel and set `DATABASE_URL` (the Neon connection string) plus your
+API keys as environment variables. Full walkthrough:
+**[`DEPLOY_VERCEL.md`](DEPLOY_VERCEL.md)**.
 
-> Render's free Postgres expires ~90 days after creation — recreate and re-run
-> the migration, or upgrade to a paid instance. Details in `DEPLOY.md`.
+> Both Vercel (Hobby) and Neon's free tier have no time limit — the site stays
+> live with no sleep, no memory cap, and no database expiry.
 
 ---
 

@@ -12,7 +12,7 @@ OMDb's free tier allows 1,000 requests/day, so the script stops at a daily cap
 re-run it the next day to continue down the popularity list.
 
 Targets the same database the app uses:
-  * DATABASE_URL set  -> Postgres (your live Render data)   <-- recommended
+  * DATABASE_URL set  -> Postgres (your live Neon data)   <-- recommended
   * DATABASE_URL unset -> local screamstream.db (then re-run migrate_to_postgres.py)
 
 Usage:
