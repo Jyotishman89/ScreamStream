@@ -121,6 +121,19 @@ html[data-theme="light"] .hero {
     linear-gradient(rgba(255, 255, 255, .2), var(--bg)),
     radial-gradient(circle at 70% 25%, rgba(16, 185, 129, .14), transparent 60%);
 }
+html[data-theme="light"] .auth-wrap {
+  background:
+    radial-gradient(circle at 25% 15%, rgba(16, 185, 129, .16), transparent 55%),
+    radial-gradient(circle at 80% 85%, rgba(176, 125, 10, .12), transparent 55%),
+    linear-gradient(rgba(255, 255, 255, .55), rgba(238, 242, 240, .75)), var(--bg);
+}
+html[data-theme="light"] .auth-card {
+  background: rgba(255, 255, 255, .94); border-color: rgba(20, 40, 30, .12);
+}
+html[data-theme="light"] .auth-card input {
+  background: #f4f7f5; border-color: rgba(20, 40, 30, .16); color: var(--text);
+}
+html[data-theme="light"] .auth-card input:focus { background: #fff; }
 
 html { scroll-behavior: smooth; }
 
