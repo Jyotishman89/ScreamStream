@@ -579,7 +579,8 @@ textarea:focus-visible, [tabindex]:focus-visible {
   width: 100%; max-width: 960px; aspect-ratio: 16 / 9; background: #000;
   border-radius: 10px; border: none; box-shadow: var(--shadow-2), var(--glow);
 }
-.no-media { display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.no-media { display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center; color: var(--muted); text-align: center; }
+.no-media .btn { width: auto; }
 
 .watch-info { padding: 22px 32px; max-width: 960px; margin: 0 auto; }
 .watch-info h1 { font-size: 2rem; margin-bottom: 10px; }
