@@ -2372,9 +2372,23 @@ def cron_enrich():
             done += 1
         except Exception:
             pass
+    trailer_rows = db.execute(
+        "SELECT * FROM movies WHERE COALESCE(trailer, '') = '' "
+        "ORDER BY COALESCE(imdb_votes, 0) DESC LIMIT 20").fetchall()
+    trailers = 0
+    for movie in trailer_rows:
+        try:
+            if fill_missing_trailer(movie)["trailer"]:
+                trailers += 1
+        except Exception:
+            pass
     remaining = db.execute(
         "SELECT COUNT(*) AS n FROM movies WHERE enriched = 0").fetchone()["n"]
-    return {"status": "ok", "processed": done, "remaining": remaining}
+    missing_trailers = db.execute(
+        "SELECT COUNT(*) AS n FROM movies WHERE COALESCE(trailer, '') = ''"
+    ).fetchone()["n"]
+    return {"status": "ok", "processed": done, "remaining": remaining,
+            "trailers_filled": trailers, "trailers_missing": missing_trailers}
 
 @app.errorhandler(400)
 @app.errorhandler(403)
