@@ -16,7 +16,9 @@
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
   {% else %}
     <div class="player no-media">
-      <p>No trailer available yet.</p>
+      <p>Trailer isn't embedded for this title yet.</p>
+      <a class="btn btn-primary" href="{{ yt_search }}"
+         target="_blank" rel="noopener">▶ Watch the trailer on YouTube</a>
     </div>
   {% endif %}
 </div>
