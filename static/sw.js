@@ -1,4 +1,4 @@
-const CACHE = "screamstream-v1";
+const CACHE = "screamstream-v2";
 const ASSETS = [
   "/static/style.css",
   "/static/confirm.js",
@@ -35,11 +35,13 @@ self.addEventListener("fetch", function (event) {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/static/")) {
     event.respondWith(
-      caches.match(req).then(function (hit) {
-        return hit || fetch(req).then(function (res) {
-          const copy = res.clone();
-          caches.open(CACHE).then(function (cache) { cache.put(req, copy); });
-          return res;
+      caches.open(CACHE).then(function (cache) {
+        return cache.match(req).then(function (hit) {
+          const fetching = fetch(req).then(function (res) {
+            if (res && res.ok) cache.put(req, res.clone());
+            return res;
+          }).catch(function () { return hit; });
+          return hit || fetching;
         });
       })
     );
