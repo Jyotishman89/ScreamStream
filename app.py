@@ -653,6 +653,17 @@ def enrich_movie(movie):
         return _enrich_omdb(movie)
     return movie
 
+def fill_missing_trailer(movie):
+    if movie["trailer"]:
+        return movie
+    vid = youtube_trailer(movie["title"], movie["year"])
+    if not vid:
+        return movie
+    db = get_db()
+    db.execute("UPDATE movies SET trailer = ? WHERE id = ?", (vid, movie["id"]))
+    db.commit()
+    return get_movie(movie["id"])
+
 def _enrich_omdb(movie):
     data = _http_json(
         f"https://www.omdbapi.com/?i={_row_get(movie, 'imdb_tt')}"
@@ -1967,6 +1978,7 @@ def watch(movie_id):
         abort(404)
 
     movie = enrich_movie(movie)
+    movie = fill_missing_trailer(movie)
 
     db = get_db()
     db.execute(
