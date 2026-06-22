@@ -651,6 +651,11 @@ def enrich_movie(movie):
         return _enrich_tmdb(movie)
     if OMDB_API_KEY and _row_get(movie, "imdb_tt"):
         return _enrich_omdb(movie)
+    if not (movie["tmdb_id"] or _row_get(movie, "imdb_tt")):
+        db = get_db()
+        db.execute("UPDATE movies SET enriched = 1 WHERE id = ?", (movie["id"],))
+        db.commit()
+        return get_movie(movie["id"])
     return movie
 
 def fill_missing_trailer(movie):
@@ -2364,7 +2369,8 @@ def cron_enrich():
         return {"status": "skipped", "reason": "no enrichment provider configured"}
     db = get_db()
     rows = db.execute(
-        "SELECT * FROM movies WHERE enriched = 0 LIMIT 10").fetchall()
+        "SELECT * FROM movies WHERE enriched = 0 "
+        "ORDER BY COALESCE(imdb_votes, 0) DESC LIMIT 10").fetchall()
     done = 0
     for movie in rows:
         try:
