@@ -1,9 +1,9 @@
 # ScreamStream 
 
 A movie exploring web app: sign up, browse a **144,000-title**
-catalog by genre, stream the free in-app titles, or jump to the trailer +
-"where to watch" links for everything else. An **"Ask anything"** box answers
-natural-language questions with real films from the catalog.
+catalog by genre, watch the trailer for any title, and follow
+"where to watch" links to the platforms that stream it. An **"Ask anything"**
+box answers natural-language questions with real films from the catalog.
 
 ### 🔗 Live demo — **https://scream-stream.vercel.app**
 
@@ -45,7 +45,7 @@ What makes this more than a CRUD demo:
 | **Accounts** | Register / log in; passwords stored only as salted hashes. |
 | **Huge catalog** | ~144k movies from IMDb datasets, organised into genre rows. |
 | **Rich metadata** | IMDb / Rotten Tomatoes / Metacritic scores, year, rating, runtime, synopsis, cast, director. |
-| **Stream or trailer** | Free titles play in an HTML5 player; everything else embeds its YouTube trailer. |
+| **Trailers** | Every title embeds its official YouTube trailer. |
 | **Where to watch** | Region-accurate streaming-provider links per title. |
 | **Watch history** | "Continue Watching" row + a dedicated history page. |
 | **Ask anything** | Plain-English movie questions answered with real catalog matches. |
@@ -58,8 +58,8 @@ What makes this more than a CRUD demo:
 - **Python 3.12** · **Flask 3** · **Jinja2** — server-rendered; *no* JS framework.
 - **SQLite** (dev) / **PostgreSQL via psycopg2** (prod, on **Neon**) — same code, dual-mode.
 - **Werkzeug** password hashing (PBKDF2) · **Gunicorn** WSGI server.
-- **HTML5 + a single hand-written CSS file** — no CSS framework; `<video>` for
-  streams, YouTube `<iframe>` for trailers.
+- **HTML5 + a single hand-written CSS file** — no CSS framework; YouTube
+  `<iframe>` for trailers.
 - **Data:** IMDb datasets (catalog) · OMDb (posters/scores) · YouTube (trailers) ·
   Streaming Availability API (where-to-watch) · Groq LLM (Ask anything).
 - **Hosting:** Vercel (serverless Python) + Neon (managed PostgreSQL), configured by `vercel.json`.
@@ -115,6 +115,6 @@ API keys as environment variables. Full walkthrough:
   live only in environment variables / the database — never committed.
 - **Passwords hashed** with Werkzeug (PBKDF2); plaintext is never stored.
   Sessions are signed with `SECRET_KEY`. Flask debug is off unless explicitly enabled.
-- **Content:** real films can't be bundled, so **▶ Stream** titles use free
-  Creative-Commons videos (Blender open movies); everything else links to the
-  real trailer and streaming platforms. Scores and years are real reference data.
+- **Content:** ScreamStream doesn't host or stream full films — every title
+  links to its real YouTube trailer and to the platforms that stream it. Scores
+  and years are real reference data.
