@@ -48,6 +48,7 @@ What makes this more than a CRUD demo:
 | | |
 |---|---|
 | **Accounts** | Register / log in; passwords stored only as salted hashes. |
+| **Two-factor auth** | Optional TOTP 2FA — pair any authenticator app on top of the password. |
 | **Huge catalog** | ~144k movies from IMDb datasets, organised into genre rows. |
 | **Rich metadata** | IMDb / Rotten Tomatoes / Metacritic scores, year, rating, runtime, synopsis, cast, director. |
 | **Trailers** | Every title embeds its official YouTube trailer. |
@@ -76,8 +77,8 @@ What makes this more than a CRUD demo:
 No build step — Python is interpreted; the only "build" is installing deps.
 
 ```bash
-git clone https://github.com/Jyotishman89/screamstream.git
-cd screamstream
+git clone https://github.com/Jyotishman89/ScreamStream.git
+cd ScreamStream
 python -m venv .venv && .venv\Scripts\Activate.ps1   # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # optional: add API keys for posters / trailers / Ask-anything
@@ -120,6 +121,7 @@ API keys as environment variables. Full walkthrough:
   live only in environment variables / the database — never committed.
 - **Passwords hashed** with Werkzeug (PBKDF2); plaintext is never stored.
   Sessions are signed with `SECRET_KEY`. Flask debug is off unless explicitly enabled.
+  Accounts can add **TOTP two-factor auth** for a second login step.
 - **Content:** ScreamStream doesn't host or stream full films — every title
   links to its real YouTube trailer and to the platforms that stream it. Scores
   and years are real reference data.
