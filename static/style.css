@@ -959,7 +959,7 @@ html[data-theme="light"] body.auth-page .auth-card {
 
 .hero, .page-head, .ask-head { position: relative; isolation: isolate; overflow: hidden; }
 .page-head:has(.hero-backdrop), .ask-head:has(.hero-backdrop) {
-  min-height: 188px; align-items: center;
+  min-height: 204px; align-items: center;
 }
 .hero-backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .hero-backdrop ~ * { position: relative; z-index: 1; }
@@ -969,23 +969,24 @@ html[data-theme="light"] body.auth-page .auth-card {
 .hero-backdrop-wall {
   position: absolute; inset: -10% 0;
   display: flex; gap: 12px; justify-content: center;
-  filter: saturate(1.1) blur(1px);
+  filter: saturate(1.12) blur(1px);
 }
+.hero-backdrop-wall .pwall-col { flex: 0 0 clamp(190px, 18vw, 290px); }
 .hero-backdrop-veil {
   position: absolute; inset: 0; z-index: 1;
   background:
-    linear-gradient(90deg, rgba(3, 11, 8, .94) 0%, rgba(3, 11, 8, .78) 26%,
-      rgba(3, 11, 8, .38) 58%, rgba(3, 11, 8, .18) 100%),
-    linear-gradient(180deg, rgba(3, 11, 8, .1) 0%, rgba(3, 11, 8, .24) 55%,
-      rgba(6, 18, 14, .9) 100%),
-    radial-gradient(75% 95% at 80% 32%, rgba(16, 185, 129, .14), transparent 72%);
+    linear-gradient(90deg, rgba(3, 11, 8, .9) 0%, rgba(3, 11, 8, .64) 26%,
+      rgba(3, 11, 8, .24) 58%, rgba(3, 11, 8, .06) 100%),
+    linear-gradient(180deg, rgba(3, 11, 8, .04) 0%, rgba(3, 11, 8, .15) 55%,
+      rgba(6, 18, 14, .88) 100%),
+    radial-gradient(75% 95% at 80% 32%, rgba(16, 185, 129, .12), transparent 72%);
 }
 html[data-theme="light"] .hero-backdrop-veil {
   background:
-    linear-gradient(90deg, rgba(238, 242, 240, .94) 0%, rgba(238, 242, 240, .8) 26%,
-      rgba(238, 242, 240, .46) 58%, rgba(238, 242, 240, .28) 100%),
-    linear-gradient(180deg, rgba(238, 242, 240, .2) 0%, rgba(238, 242, 240, .32) 55%,
-      rgba(238, 242, 240, .9) 100%),
+    linear-gradient(90deg, rgba(238, 242, 240, .9) 0%, rgba(238, 242, 240, .68) 26%,
+      rgba(238, 242, 240, .34) 58%, rgba(238, 242, 240, .16) 100%),
+    linear-gradient(180deg, rgba(238, 242, 240, .14) 0%, rgba(238, 242, 240, .24) 55%,
+      rgba(238, 242, 240, .88) 100%),
     radial-gradient(75% 95% at 80% 32%, rgba(16, 185, 129, .1), transparent 72%);
 }
 html[data-theme="light"] .page-head .hero-backdrop ~ h1,
@@ -996,6 +997,7 @@ html[data-theme="light"] .page-head .hero-backdrop ~ p {
   .hero-backdrop-wall .pwall-col { animation: none; }
 }
 @media (max-width: 640px) {
-  .page-head:has(.hero-backdrop), .ask-head:has(.hero-backdrop) { min-height: 140px; }
+  .page-head:has(.hero-backdrop), .ask-head:has(.hero-backdrop) { min-height: 150px; }
   .hero-backdrop-wall { gap: 8px; }
+  .hero-backdrop-wall .pwall-col { flex: 0 0 clamp(150px, 46vw, 230px); }
 }

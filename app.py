@@ -1337,7 +1337,7 @@ def admin_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-ASSET_VERSION = "5"
+ASSET_VERSION = "6"
 BACKDROP_COLUMNS = 8
 BACKDROP_TILES_PER_COL = 5
 _backdrop_cache = {"at": 0.0, "cols": None}
