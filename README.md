@@ -35,6 +35,11 @@ What makes this more than a CRUD demo:
   every answer links to a real detail page, not a hallucinated one.
 - **Graceful degradation.** Every external integration is optional; without a key
   the feature falls back to a simpler behaviour and the site still runs.
+- **A living, catalog-driven backdrop.** Login and every page header are wallpapered
+  with a slow drift of *real* posters pulled live from the most-popular rows of the
+  database — animated purely in CSS, dimmed behind a readable veil, and stilled for
+  anyone who sets `prefers-reduced-motion`. Versioned asset URLs guarantee the
+  freshest stylesheet ships past the service-worker cache.
 
 ---
 
