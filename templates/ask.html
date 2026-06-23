@@ -3,6 +3,7 @@
 
 {% block content %}
 <section class="ask-head">
+  {% include "_backdrop.html" %}
   <form class="ask-form" method="get" action="{{ url_for('ask') }}">
     <input type="text" name="q" value="{{ query }}"
            placeholder="Ask anything about movies…" autofocus>

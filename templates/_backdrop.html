@@ -1,0 +1,14 @@
+{% set pwall = backdrop_columns() %}
+{% if pwall %}
+<div class="hero-backdrop" aria-hidden="true">
+  <div class="hero-backdrop-wall">
+    {% for col in pwall %}
+    <div class="pwall-col">
+      {% for url in col %}<span class="pwall-tile"><img src="{{ url }}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>{% endfor %}
+      {% for url in col %}<span class="pwall-tile"><img src="{{ url }}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="hero-backdrop-veil"></div>
+</div>
+{% endif %}

@@ -3,6 +3,7 @@
 
 {% block content %}
 <section class="page-head">
+  {% include "_backdrop.html" %}
   <h1>My History</h1>
   {% if movies %}
     <form method="post" action="{{ url_for('clear_history') }}"
