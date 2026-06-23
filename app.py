@@ -4,6 +4,7 @@ import hmac
 import json
 import mimetypes
 import os
+import random
 import re
 import secrets
 import smtplib
@@ -1335,6 +1336,41 @@ def admin_required(view):
             abort(403)
         return view(*args, **kwargs)
     return wrapped
+
+BACKDROP_COLUMNS = 8
+BACKDROP_TILES_PER_COL = 5
+_backdrop_cache = {"at": 0.0, "cols": None}
+
+def login_backdrop_columns():
+    target = BACKDROP_COLUMNS * BACKDROP_TILES_PER_COL
+    now = time.time()
+    if _backdrop_cache["cols"] is not None and now - _backdrop_cache["at"] < 600:
+        return _backdrop_cache["cols"]
+    cols = []
+    try:
+        db = get_db()
+        rows = db.execute(
+            "SELECT poster FROM movies WHERE COALESCE(poster, '') <> '' "
+            "ORDER BY COALESCE(imdb_votes, 0) DESC LIMIT 120"
+        ).fetchall()
+        urls = [r["poster"] for r in rows if r["poster"]]
+        if urls:
+            random.shuffle(urls)
+            urls = urls[:target * 2]
+            while len(urls) < target:
+                urls = urls + urls
+            urls = urls[:target]
+            cols = [urls[i::BACKDROP_COLUMNS] for i in range(BACKDROP_COLUMNS)]
+            cols = [c for c in cols if c]
+    except Exception:
+        cols = []
+    _backdrop_cache["at"] = now
+    _backdrop_cache["cols"] = cols
+    return cols
+
+@app.context_processor
+def _inject_backdrop_columns():
+    return {"backdrop_columns": login_backdrop_columns}
 
 @app.route("/register", methods=["GET", "POST"])
 def register():

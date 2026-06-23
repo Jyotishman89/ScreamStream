@@ -23,7 +23,7 @@
   <script src="{{ url_for('static', filename='confirm.js') }}" defer></script>
   <script src="{{ url_for('static', filename='pwa.js') }}" defer></script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <header class="site-header">
     <a class="logo" href="{{ url_for('index') }}">SCREAM<span>STREAM</span></a>
     {% if session.get('user_id') %}

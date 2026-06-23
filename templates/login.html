@@ -1,7 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Log in — ScreamStream{% endblock %}
+{% block body_class %}auth-page{% endblock %}
 
 {% block content %}
+{% set pwall = backdrop_columns() %}
+{% if pwall %}
+<div class="poster-wall" aria-hidden="true">
+  {% for col in pwall %}
+  <div class="pwall-col">
+    {% for url in col %}<span class="pwall-tile"><img src="{{ url }}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>{% endfor %}
+    {% for url in col %}<span class="pwall-tile"><img src="{{ url }}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>{% endfor %}
+  </div>
+  {% endfor %}
+</div>
+<div class="poster-wall-veil" aria-hidden="true"></div>
+{% endif %}
+
 <div class="auth-wrap">
   <div class="auth-card">
     <h1 class="auth-logo">SCREAM<span>STREAM</span></h1>
