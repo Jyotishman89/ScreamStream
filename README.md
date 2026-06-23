@@ -49,13 +49,18 @@ What makes this more than a CRUD demo:
 |---|---|
 | **Accounts** | Register / log in; passwords stored only as salted hashes. |
 | **Two-factor auth** | Optional TOTP 2FA — pair any authenticator app on top of the password. |
+| **Account & privacy** | Email verification & password reset, "log out everywhere", one-click data export and account deletion. |
 | **Huge catalog** | ~144k movies from IMDb datasets, organised into genre rows. |
+| **Personalised home** | "Continue Watching", "Trending", "Because you like…" and "Coming Soon" rows, plus a 🎲 random pick. |
 | **Rich metadata** | IMDb / Rotten Tomatoes / Metacritic scores, year, rating, runtime, synopsis, cast, director. |
 | **Trailers** | Every title embeds its official YouTube trailer. |
 | **Where to watch** | Region-accurate streaming-provider links per title. |
-| **Watch history** | "Continue Watching" row + a dedicated history page. |
+| **Ratings & reviews** | Members rate any title and leave a review; the per-title average is shown. |
+| **My List & history** | Save titles to a personal watchlist and revisit a dedicated watch-history page. |
 | **Ask anything** | Plain-English movie questions answered with real catalog matches. |
-| **Admin panel** | Add / remove / import movies, behind a single admin account. |
+| **Light & dark theme** | One-tap theme switch across the whole app. |
+| **Installable PWA** | Add-to-home-screen with a service worker for fast, offline-friendly loads. |
+| **Admin panel** | Add / remove / import movies and view a usage-analytics dashboard, behind a single admin account. |
 
 ---
 
@@ -65,9 +70,10 @@ What makes this more than a CRUD demo:
 - **SQLite** (dev) / **PostgreSQL via psycopg2** (prod, on **Neon**) — same code, dual-mode.
 - **Werkzeug** password hashing (PBKDF2) · **Gunicorn** WSGI server.
 - **HTML5 + a single hand-written CSS file** — no CSS framework; YouTube
-  `<iframe>` for trailers.
+  `<iframe>` for trailers; **installable PWA** (web manifest + service worker).
 - **Data:** IMDb datasets (catalog) · OMDb (posters/scores) · YouTube (trailers) ·
-  Streaming Availability API (where-to-watch) · Groq LLM (Ask anything).
+  Streaming Availability API (where-to-watch) · Groq LLM (Ask anything) ·
+  SMTP (account emails — verification & password reset).
 - **Hosting:** Vercel (serverless Python) + Neon (managed PostgreSQL), configured by `vercel.json`.
 
 ---
