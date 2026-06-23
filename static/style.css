@@ -958,33 +958,44 @@ html[data-theme="light"] body.auth-page .auth-card {
 }
 
 .hero, .page-head, .ask-head { position: relative; isolation: isolate; overflow: hidden; }
-.page-head:has(.hero-backdrop), .ask-head:has(.hero-backdrop) { min-height: 132px; }
+.page-head:has(.hero-backdrop), .ask-head:has(.hero-backdrop) {
+  min-height: 188px; align-items: center;
+}
 .hero-backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .hero-backdrop ~ * { position: relative; z-index: 1; }
+.page-head .hero-backdrop ~ h1, .hero-inner h1, .page-head .hero-backdrop ~ p {
+  text-shadow: 0 2px 16px rgba(0, 0, 0, .55);
+}
 .hero-backdrop-wall {
   position: absolute; inset: -10% 0;
-  display: flex; gap: 14px; justify-content: center;
-  filter: saturate(1.05) blur(2px);
+  display: flex; gap: 12px; justify-content: center;
+  filter: saturate(1.1) blur(1px);
 }
 .hero-backdrop-veil {
   position: absolute; inset: 0; z-index: 1;
   background:
-    linear-gradient(90deg, rgba(4, 13, 9, .96) 0%, rgba(4, 13, 9, .88) 32%,
-      rgba(4, 13, 9, .56) 66%, rgba(4, 13, 9, .42) 100%),
-    linear-gradient(rgba(4, 13, 9, .28) 0%, rgba(6, 18, 14, .94) 92%),
-    radial-gradient(60% 85% at 80% 28%, rgba(16, 185, 129, .16), transparent 70%);
+    linear-gradient(90deg, rgba(3, 11, 8, .94) 0%, rgba(3, 11, 8, .78) 26%,
+      rgba(3, 11, 8, .38) 58%, rgba(3, 11, 8, .18) 100%),
+    linear-gradient(180deg, rgba(3, 11, 8, .1) 0%, rgba(3, 11, 8, .24) 55%,
+      rgba(6, 18, 14, .9) 100%),
+    radial-gradient(75% 95% at 80% 32%, rgba(16, 185, 129, .14), transparent 72%);
 }
 html[data-theme="light"] .hero-backdrop-veil {
   background:
-    linear-gradient(90deg, rgba(238, 242, 240, .96) 0%, rgba(238, 242, 240, .88) 32%,
-      rgba(238, 242, 240, .58) 66%, rgba(238, 242, 240, .44) 100%),
-    linear-gradient(rgba(238, 242, 240, .38) 0%, rgba(238, 242, 240, .94) 92%),
-    radial-gradient(60% 85% at 80% 28%, rgba(16, 185, 129, .1), transparent 70%);
+    linear-gradient(90deg, rgba(238, 242, 240, .94) 0%, rgba(238, 242, 240, .8) 26%,
+      rgba(238, 242, 240, .46) 58%, rgba(238, 242, 240, .28) 100%),
+    linear-gradient(180deg, rgba(238, 242, 240, .2) 0%, rgba(238, 242, 240, .32) 55%,
+      rgba(238, 242, 240, .9) 100%),
+    radial-gradient(75% 95% at 80% 32%, rgba(16, 185, 129, .1), transparent 72%);
+}
+html[data-theme="light"] .page-head .hero-backdrop ~ h1,
+html[data-theme="light"] .page-head .hero-backdrop ~ p {
+  text-shadow: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-backdrop-wall .pwall-col { animation: none; }
 }
 @media (max-width: 640px) {
-  .page-head:has(.hero-backdrop), .ask-head:has(.hero-backdrop) { min-height: 108px; }
-  .hero-backdrop-wall { gap: 10px; }
+  .page-head:has(.hero-backdrop), .ask-head:has(.hero-backdrop) { min-height: 140px; }
+  .hero-backdrop-wall { gap: 8px; }
 }
