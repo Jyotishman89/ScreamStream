@@ -230,6 +230,10 @@ EMAIL_ENABLED = bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 CRON_SECRET = os.environ.get("CRON_SECRET", "")
+CRON_ENRICH_BATCH = int(os.environ.get("CRON_ENRICH_BATCH", "50"))
+CRON_TRAILER_BATCH = int(os.environ.get("CRON_TRAILER_BATCH", "20"))
+CRON_ENRICH_SECONDS = float(os.environ.get("CRON_ENRICH_SECONDS", "5.5"))
+CRON_BUDGET_SECONDS = float(os.environ.get("CRON_BUDGET_SECONDS", "8.5"))
 
 TMDB_API = "https://api.themoviedb.org/3"
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
@@ -2368,11 +2372,14 @@ def cron_enrich():
     if not (TMDB_API_KEY or OMDB_API_KEY):
         return {"status": "skipped", "reason": "no enrichment provider configured"}
     db = get_db()
+    start = time.monotonic()
     rows = db.execute(
         "SELECT * FROM movies WHERE enriched = 0 "
-        "ORDER BY COALESCE(imdb_votes, 0) DESC LIMIT 10").fetchall()
+        f"ORDER BY COALESCE(imdb_votes, 0) DESC LIMIT {CRON_ENRICH_BATCH}").fetchall()
     done = 0
     for movie in rows:
+        if time.monotonic() - start > CRON_ENRICH_SECONDS:
+            break
         try:
             enrich_movie(movie)
             done += 1
@@ -2380,9 +2387,11 @@ def cron_enrich():
             pass
     trailer_rows = db.execute(
         "SELECT * FROM movies WHERE COALESCE(trailer, '') = '' "
-        "ORDER BY COALESCE(imdb_votes, 0) DESC LIMIT 20").fetchall()
+        f"ORDER BY COALESCE(imdb_votes, 0) DESC LIMIT {CRON_TRAILER_BATCH}").fetchall()
     trailers = 0
     for movie in trailer_rows:
+        if time.monotonic() - start > CRON_BUDGET_SECONDS:
+            break
         try:
             if fill_missing_trailer(movie)["trailer"]:
                 trailers += 1
