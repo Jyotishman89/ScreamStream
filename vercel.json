@@ -1,13 +1,16 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 60,
-      "includeFiles": "{templates/**,static/**,app.py}"
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": ["templates/**", "static/**"]
+      }
     }
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "app.py" }
   ],
   "crons": [
     { "path": "/cron/enrich", "schedule": "0 4 * * *" }

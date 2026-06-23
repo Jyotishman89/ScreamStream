@@ -230,10 +230,10 @@ EMAIL_ENABLED = bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 CRON_SECRET = os.environ.get("CRON_SECRET", "")
-CRON_ENRICH_BATCH = int(os.environ.get("CRON_ENRICH_BATCH", "200"))
+CRON_ENRICH_BATCH = int(os.environ.get("CRON_ENRICH_BATCH", "60"))
 CRON_TRAILER_BATCH = int(os.environ.get("CRON_TRAILER_BATCH", "20"))
-CRON_ENRICH_SECONDS = float(os.environ.get("CRON_ENRICH_SECONDS", "35"))
-CRON_BUDGET_SECONDS = float(os.environ.get("CRON_BUDGET_SECONDS", "48"))
+CRON_ENRICH_SECONDS = float(os.environ.get("CRON_ENRICH_SECONDS", "6.5"))
+CRON_BUDGET_SECONDS = float(os.environ.get("CRON_BUDGET_SECONDS", "9"))
 
 TMDB_API = "https://api.themoviedb.org/3"
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
