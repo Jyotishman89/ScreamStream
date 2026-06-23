@@ -1337,6 +1337,7 @@ def admin_required(view):
         return view(*args, **kwargs)
     return wrapped
 
+ASSET_VERSION = "3"
 BACKDROP_COLUMNS = 8
 BACKDROP_TILES_PER_COL = 5
 _backdrop_cache = {"at": 0.0, "cols": None}
@@ -1370,7 +1371,8 @@ def login_backdrop_columns():
 
 @app.context_processor
 def _inject_backdrop_columns():
-    return {"backdrop_columns": login_backdrop_columns}
+    return {"backdrop_columns": login_backdrop_columns,
+            "asset_version": ASSET_VERSION}
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
