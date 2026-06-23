@@ -1,7 +1,7 @@
 # ScreamStream 
 
 A movie exploring web app: sign up, browse a **144,000-title**
-catalog by genre, watch the trailer for any title, and follow
+catalog by genre, watch a title's YouTube trailer, and follow
 "where to watch" links to the platforms that stream it. An **"Ask anything"**
 box answers natural-language questions with real films from the catalog.
 
@@ -52,9 +52,9 @@ What makes this more than a CRUD demo:
 | **Account & privacy** | Email verification & password reset, "log out everywhere", one-click data export and account deletion. |
 | **Huge catalog** | ~144k movies from IMDb datasets, organised into genre rows. |
 | **Personalised home** | "Continue Watching", "Trending", "Because you like…" and "Coming Soon" rows, plus a 🎲 random pick. |
-| **Rich metadata** | IMDb / Rotten Tomatoes / Metacritic scores, year, rating, runtime, synopsis, cast, director. |
-| **Trailers** | Every title embeds its official YouTube trailer. |
-| **Where to watch** | Region-accurate streaming-provider links per title. |
+| **Rich metadata** | IMDb & Rotten Tomatoes scores, year, age rating, runtime, synopsis, cast, director. |
+| **Trailers** | Plays a title's YouTube trailer when one is found, with a watch-on-YouTube fallback. |
+| **Where to watch** | Region-aware streaming-provider links, shown for titles where data is available. |
 | **Ratings & reviews** | Members rate any title and leave a review; the per-title average is shown. |
 | **My List & history** | Save titles to a personal watchlist and revisit a dedicated watch-history page. |
 | **Ask anything** | Plain-English movie questions answered with real catalog matches. |
@@ -128,6 +128,6 @@ API keys as environment variables. Full walkthrough:
 - **Passwords hashed** with Werkzeug (PBKDF2); plaintext is never stored.
   Sessions are signed with `SECRET_KEY`. Flask debug is off unless explicitly enabled.
   Accounts can add **TOTP two-factor auth** for a second login step.
-- **Content:** ScreamStream doesn't host or stream full films — every title
-  links to its real YouTube trailer and to the platforms that stream it. Scores
+- **Content:** ScreamStream doesn't host or stream full films — each title
+  links out to its YouTube trailer and to the platforms that stream it. Scores
   and years are real reference data.
