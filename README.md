@@ -1,6 +1,6 @@
 # ScreamStream 
 
-A movie exploring web app: sign up, browse a **144,000-title**
+A movie exploration web app: sign up, browse a **144,000-title**
 catalog by genre, watch a title's YouTube trailer, and follow
 "where to watch" links to the platforms that stream it. An **"Ask anything"**
 box answers natural-language questions with real films from the catalog.
