@@ -5,6 +5,7 @@ import sys
 import urllib.request
 
 from app import app, get_db, init_db, seed_movies
+from genre_overrides import OVERRIDE_BY_IMDB
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(BASE, ".imdb_cache")
@@ -114,6 +115,7 @@ def main():
                 if votes < min_votes or tconst in existing:
                     continue
                 genre = pick_category(genres.split(",")) if genres != "\\N" else None
+                genre = OVERRIDE_BY_IMDB.get(tconst, genre)
                 if not genre:
                     continue
                 year = int(start) if start.isdigit() else None
