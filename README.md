@@ -110,10 +110,7 @@ list (all optional; the app degrades gracefully without them).
 
 Live on **Vercel** (serverless Python) backed by a free **Neon** PostgreSQL
 database. The repo ships `vercel.json`, which points Vercel's Python runtime at
-`app.py` and bundles the templates/static. The flow: create a Neon database,
-load the catalog into it once with `python migrate_to_postgres.py`, then import
-the repo on Vercel and set `DATABASE_URL` (the Neon connection string) plus your
-API keys as environment variables.
+`app.py` and bundles the templates/static. 
 
 ---
 
