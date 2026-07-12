@@ -5,7 +5,7 @@ catalog by genre, watch a title's YouTube trailer, and follow
 "where to watch" links to the platforms that stream it. An **"Ask anything"**
 box answers natural-language questions with real films from the catalog.
 
-### 🔗 Live demo — **https://scream-stream.vercel.app**
+### 🔗 Live — **https://scream-stream.vercel.app**
 
 > Hosted free on **Vercel** (serverless) with a **Neon** PostgreSQL database —
 > effectively always-on, with no spin-down wait. Create an account to browse.
@@ -113,8 +113,7 @@ database. The repo ships `vercel.json`, which points Vercel's Python runtime at
 `app.py` and bundles the templates/static. The flow: create a Neon database,
 load the catalog into it once with `python migrate_to_postgres.py`, then import
 the repo on Vercel and set `DATABASE_URL` (the Neon connection string) plus your
-API keys as environment variables. Full walkthrough:
-**[`DEPLOY_VERCEL.md`](DEPLOY_VERCEL.md)**.
+API keys as environment variables.
 
 > Both Vercel (Hobby) and Neon's free tier have no time limit — the site stays
 > live with no sleep, no memory cap, and no database expiry.
