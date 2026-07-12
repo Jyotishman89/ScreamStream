@@ -115,9 +115,6 @@ load the catalog into it once with `python migrate_to_postgres.py`, then import
 the repo on Vercel and set `DATABASE_URL` (the Neon connection string) plus your
 API keys as environment variables.
 
-> Both Vercel (Hobby) and Neon's free tier have no time limit — the site stays
-> live with no sleep, no memory cap, and no database expiry.
-
 ---
 
 ## Security & content notes
