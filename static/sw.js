@@ -1,7 +1,8 @@
-const CACHE = "screamstream-v3";
+const CACHE = "screamstream-v4";
 const ASSETS = [
   "/static/style.css",
   "/static/confirm.js",
+  "/static/formkeys.js",
   "/static/pwa.js",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png"
