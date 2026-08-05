@@ -740,8 +740,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
 
 @media (max-width: 860px) { .admin-grid { grid-template-columns: 1fr; } }
 
-/* Tablets & large phones — let the crowded header reflow onto two rows and
-   give the search its own full-width line instead of squishing everything. */
 @media (max-width: 820px) {
   .site-header { flex-wrap: wrap; row-gap: 10px; }
   .nav { width: 100%; gap: 12px 16px; }
@@ -762,7 +760,7 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .analytics-stats, .tmdb-panel, .pagination, .back-link, .result-note,
   .flashes { padding-left: 16px; padding-right: 16px; }
   .ask-answer, .tmdb-panel { margin-left: 16px; margin-right: 16px; }
-  /* 16px keeps iOS Safari from auto-zooming the page when a field is focused. */
+
   input, select, textarea,
   .search input, .filters select, .filters input,
   .auth-card input, .account-form input, .admin-form input,
@@ -772,7 +770,6 @@ textarea:focus-visible, [tabindex]:focus-visible {
   .auth-card { padding: 30px 22px; }
 }
 
-/* Small phones — stack side-by-side controls so nothing gets clipped. */
 @media (max-width: 480px) {
   .form-row { flex-direction: column; gap: 0; }
   .ask-form, .tmdb-search { flex-direction: column; }
