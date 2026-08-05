@@ -14,6 +14,7 @@ import time
 import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 from email.message import EmailMessage
+from email.utils import formataddr
 from functools import wraps
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -227,6 +228,13 @@ SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASSWORD", "")
 SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER)
+# What recipients see as the sender instead of the raw address. The display
+# name is shown in every inbox; set SMTP_FROM to a dedicated no-reply address
+# (on a provider that allows it) to keep your personal address fully hidden.
+SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "ScreamStream")
+# Where replies go. Defaults to a no-reply on the sending domain so people
+# don't reply straight into a personal inbox.
+SMTP_REPLY_TO = os.environ.get("SMTP_REPLY_TO", "")
 EMAIL_ENABLED = bool(SMTP_HOST and SMTP_USER and SMTP_PASS)
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -1291,8 +1299,15 @@ def _send_email(to_addr, subject, body):
         return False
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = SMTP_FROM
+    # Show a friendly name ("ScreamStream") rather than the bare address, so the
+    # personal account isn't what recipients see. The envelope/From still has to
+    # be an address the SMTP server is allowed to send as (e.g. Gmail rewrites it
+    # to the authenticated account) — set SMTP_FROM to a dedicated no-reply
+    # address to hide the personal one entirely.
+    msg["From"] = formataddr((SMTP_FROM_NAME, SMTP_FROM))
     msg["To"] = to_addr
+    if SMTP_REPLY_TO:
+        msg["Reply-To"] = formataddr((SMTP_FROM_NAME, SMTP_REPLY_TO))
     msg.set_content(body)
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
@@ -1337,7 +1352,7 @@ def admin_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-ASSET_VERSION = "8"
+ASSET_VERSION = "9"
 BACKDROP_COLUMNS = 8
 BACKDROP_TILES_PER_COL = 5
 _backdrop_cache = {"at": 0.0, "cols": None}
